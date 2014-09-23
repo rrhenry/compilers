@@ -24,7 +24,7 @@ typedef enum {
 Token currTok;
 const int BUFF_SIZE = 80;		// if you change this pls change currLine's size
 char currChar;
-char currLine [80];				// 80 character limit is arbitrary
+char currLine [80];		// 80 character limit is arbitrary but sensible.
 								// should be pointer...?
 FILE *toScan;
 
