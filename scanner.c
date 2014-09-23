@@ -20,7 +20,7 @@ typedef enum {
 
 Token currTok;
 char currChar;
-char currLine [80];		// 80 character limit is arbitrary
+char currLine [80];		// 80 character limit is arbitrary but sensible.
 int main()
 {	
 	// so cleeeeaaaaaan
