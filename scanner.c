@@ -18,9 +18,9 @@ enum Token  {
 		 	whileStatement, repeatStatement, loopStatement, withStatement 
 		    };
 
-Token curTok;
-char curChar;
-
+Token currTok;
+char currChar;
+char [80] currLine;		// 80 character limit is arbitrary
 int main()
 {	
 	// so cleeeeaaaaaan
