@@ -20,7 +20,7 @@ enum Token  {
 
 Token currTok;
 char currChar;
-char [80] currLine;		// 80 character limit is arbitrary
+char currLine [80];		// 80 character limit is arbitrary
 int main()
 {	
 	// so cleeeeaaaaaan
