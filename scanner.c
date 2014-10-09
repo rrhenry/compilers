@@ -26,16 +26,21 @@ const int BUFF_SIZE = 80;		// if you change this pls change currLine's size
 char currChar;
 char currLine [80];		// 80 character limit is arbitrary but sensible.
 								// should be pointer...?
+int count = 0;
 FILE *toScan;
 
 //	*
 //	Get a character and put it in currChar.
 //	-- might be useless
 //	-- might want to grab from currLine and put into currChar?
-//
+//	++ probably not though. We need to fetch a character based on a counter, right?
+//  ++ we don't necessarily want that function in getLine? 
 void getChar()
 {
-	
+	if(count >= 80) //ok i'm assuming currline's size is 80 characters total
+		count = 0; 	//starting at index 0, and will be over limit at or abover 80
+
+	currChar = currline[count]; 
 }
 
 //	*
@@ -46,6 +51,7 @@ void getLine()
 	char *funLine = (char *) malloc(BUFF_SIZE);
 	if ( fgets(funLine, BUFF_SIZE, toScan) != NULL )
 		fputs(funLine, stdout);
+
 }
 
 int main( void )
