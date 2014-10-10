@@ -22,13 +22,39 @@ typedef enum {
 			} Token;
 
 Token currTok;
-const int BUFF_SIZE = 80;		// if you change this pls change currLine's size
+const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
 char currChar;
-char currLine [80];		// 80 character limit is arbitrary but sensible.
+char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
 int count = 0;
-Token currObj;
 FILE *toScan;
+
+int isDigit(char aChar)
+{
+	if ( aChar >= '0' && aChar <= '9')
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+int isAlpha(char aChar)
+{
+	if ((aChar >= 'a' && aChar <= 'z') || (aChar >= 'A' && aChar <= 'Z'))
+		return 1;
+
+	return 0;
+}
+
+int isHexDigit(char aChar)
+{
+	if (isDigit(aChar) || aChar == 'A' || aChar == 'B' || aChar == 'C' || aChar == 'D' || aChar == 'E' || aChar == 'F')
+		return 1;
+
+	return 0;
+}
+
 
 //	*
 //	Get a character and put it in currChar.
@@ -39,7 +65,7 @@ FILE *toScan;
 //
 void getChar()
 {
-	if(count >= 80) //ok i'm assuming currline's size is 80 characters total
+	if(count >= BUFF_SIZE) //ok i'm assuming currline's size is 80 characters total
 		count = 0; 	//starting at index 0, and will be over limit at or abover 80
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
 	//calling this yet, so for now, it will collect all the characters as it gets 
@@ -47,6 +73,7 @@ void getChar()
 	//by then.
 
 	currChar = currLine[count]; 
+	count ++;
 }
 
 //	*
@@ -64,32 +91,39 @@ void getLine()
 
 // *
 // Determines if currChar is a digit (0...9) or a letter (a...z | A...Z)
-// sets currObj to relevant state
+// sets currTok to relevant state
 // -- might merge this with getChar because who wants to call this everytime
 //
 void charType()
 {
-	if(currChar >= 0 && currChar <= 9)
-		currObj = digit;
-	else if ( (currChar >= 'a' && currChar <= 'z') | currChar >= 'A' && currChar <= 'Z')
-		currObj = letter;
-
+	if(isDigit(currChar))
+		currTok = digit;
+	else if (isAlpha(currChar))
+		currTok = letter;
 }
 
-int main( void )
+int main( int argc, char *argv[] )
 {	
-	// so cleeeeaaaaaan
-
-	toScan = fopen("testFile.txt", "r");		// ?
-
-	if (toScan != NULL)
+	if ( argc == 2)		// we need 1 file to open, specified on command line, so 2 command line args
 	{
-		getLine();
-		getLine();
-		printf("Lol\n");
-		getLine();
+		toScan = fopen(argv[1], "r");		// assume second value is toParse file name
+
+		if (toScan != NULL)
+		{
+			getLine();
+			getLine();
+			//printf("Lol\n");
+			getLine();
+		}
+
+		if (isDigit('0'))
+			printf("Lool\n");
+
+		if (isAlpha('a'))
+			printf("No\n");
+
+		fclose(toScan);
 	}
 
-	fclose(toScan);
 	return 42;
 }
