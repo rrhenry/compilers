@@ -65,8 +65,8 @@ int isHexDigit(char aChar)
 //
 void getChar()
 {
-	if(count >= BUFF_SIZE) //ok i'm assuming currline's size is 80 characters total
-		count = 0; 	//starting at index 0, and will be over limit at or abover 80
+	if(count >= BUFF_SIZE) //ok i'm assuming currline's size is BUFF_SIZE characters total
+		count = 0; 	//starting at index 0, and will be over limit at or above BUFF_SIZE
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
 	//calling this yet, so for now, it will collect all the characters as it gets 
 	//called and when it reaches 80, it'll restart, so better hope we have a new line 
