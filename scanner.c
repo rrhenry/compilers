@@ -1,7 +1,6 @@
-#include <stdlib.h>		// needed for malloc (at least)
 #include <stdio.h>		// need for file io
 
-typedef enum { 	
+typedef enum { 								// OBERON 2, not OBERON S
 				module, 
 				ident, letter, digit,
 			 	importList, import,
@@ -26,7 +25,7 @@ const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
 char currChar;
 char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
-int count = 0;
+int count = -1;					// Global counter for current line position
 FILE *toScan;
 
 int isDigit(char aChar)
@@ -55,6 +54,23 @@ int isHexDigit(char aChar)
 	return 0;
 }
 
+int isSep(char aChar)
+{
+	if (aChar == ' ' || aChar == '\t')			// if its a space
+		return 1;
+	return 0;
+}
+
+//	*
+//	Get a line and put it in currLine.
+//
+void getLine()
+{
+	
+	fgets(currLine, BUFF_SIZE, toScan);
+	fputs(currLine, stdout); 					// Debug MSG
+
+}
 
 //	*
 //	Get a character and put it in currChar.
@@ -65,29 +81,23 @@ int isHexDigit(char aChar)
 //
 void getChar()
 {
-	if(count >= BUFF_SIZE) //ok i'm assuming currline's size is 80 characters total
-		count = 0; 	//starting at index 0, and will be over limit at or abover 80
+	//ok i'm assuming currline's size is 80 characters total
+	//starting at index 0, and will be over limit at or abover 80
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
 	//calling this yet, so for now, it will collect all the characters as it gets 
 	//called and when it reaches 80, it'll restart, so better hope we have a new line 
 	//by then.
+	if(count >= BUFF_SIZE || count == -1) 
+	{
+		count = 0;
+		getLine(); 	
+	}
 
 	currChar = currLine[count]; 
 	count ++;
 }
 
-//	*
-//	Get a line and put it in currLine.
-//
-void getLine()
-{
-	char *funLine = (char *) malloc(BUFF_SIZE);
-	if ( fgets(funLine, BUFF_SIZE, toScan) != NULL ){
-		fputs(funLine, stdout);
-		*currLine = *funLine;
-	}
 
-}
 
 // *
 // Determines if currChar is a digit (0...9) or a letter (a...z | A...Z)
@@ -102,6 +112,29 @@ void charType()
 		currTok = letter;
 }
 
+
+//
+//	Return the next symbol.
+//
+Token nextSym()
+{
+	getChar();					// get first character initally
+
+
+
+}
+
+//
+//	Scans the file and outputs the tokens to the screen.
+//
+void scan()
+{
+	// getChar();				// gets the first character
+
+
+
+}
+
 int main( int argc, char *argv[] )
 {	
 	if ( argc == 2)		// we need 1 file to open, specified on command line, so 2 command line args
@@ -110,20 +143,11 @@ int main( int argc, char *argv[] )
 
 		if (toScan != NULL)
 		{
-			getLine();
-			getLine();
-			//printf("Lol\n");
-			getLine();
+			scan();
 		}
-
-		if (isDigit('0'))
-			printf("Lool\n");
-
-		if (isAlpha('a'))
-			printf("No\n");
 
 		fclose(toScan);
 	}
 
-	return 42;
+	return 0;
 }
