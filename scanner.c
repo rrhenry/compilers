@@ -26,6 +26,10 @@ char currChar;
 char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
 int count = -1;					// Global counter for current line position
+char currWord [64];				//Word being worked on. Delimited by found whitespaces 
+								//and to be compared to a table of reserved words
+Token setTok;
+
 FILE *toScan;
 
 int isDigit(char aChar)
@@ -81,11 +85,11 @@ void getLine()
 //
 void getChar()
 {
-	//ok i'm assuming currline's size is 80 characters total
-	//starting at index 0, and will be over limit at or abover 80
+	//ok i'm assuming currline's size is Buff_size characters total
+	//starting at index 0, and will be over limit at or above buffSize
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
 	//calling this yet, so for now, it will collect all the characters as it gets 
-	//called and when it reaches 80, it'll restart, so better hope we have a new line 
+	//called and when it reaches Buff_size, it'll restart, so better hope we have a new line 
 	//by then.
 	if(count >= BUFF_SIZE || count == -1) 
 	{
@@ -119,8 +123,18 @@ void charType()
 Token nextSym()
 {
 	getChar();					// get first character initally
+	charType();					//S0, determing character type
+	if ( currTok == letter ){  	
+		while (currTok == letter | currTok == digit){
+			getChar();
+			charType();
+		}
 
-
+	}
+	else if ( currTok != letter | currTok != digit){
+		setTok = ident; 
+		return setTok;
+	}
 
 }
 
