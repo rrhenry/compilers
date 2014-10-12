@@ -161,6 +161,8 @@ Token nextSym()
 			//  it is valid as an identifier
 			//  The while loop should break out and print an error
 			//	message if something unexpected is seen. 
+			//	A whitespace is the only ending case that should 
+			//	lead to a proper ident.  
 			while (currTok == letter | currTok == digit)
 			{
 				getChar();
