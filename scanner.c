@@ -122,9 +122,76 @@ void charType()
 //
 Token nextSym()
 {
-	getChar();					// get first character initally
-	charType();					//S0, determing character type
-	if ( currTok == letter ){  	
+	getChar();					//	get first character initally//
+	charType();					//	S0, determing character type//
+	
+	switch (currTok) 
+	{
+		case digit: 			//	S1 starts looking for reals and ints//
+			
+			//	S2 keeps looking for a digit until it finds either
+			// '.', whitespace or a hexdigit 
+			// '.' can branch to REAL after a digit or
+			//	will lead to three more states until it reaches REAL
+			//	whitespace leads straight to an asignment to INT
+			//	hexdigit will keep looking for hexdigit until H or X are found
+			//	H will lead to INT and X should lead to STRING. 
+
+			break;
+
+
+
+		case '\"': 				//	S8 starts to look for a string//
+			
+			//	Keep fetching the next character until you find the
+			//	next quote. Upon finding, it, set setTok to String
+			while( currChar != '\"')
+			{
+				getChar();
+			}
+			setTok = string; 
+
+			break;
+
+
+
+		case letter: 			//	S9 starts looking for an ident//
+
+			//  While currTok is either a letter or a digit, 
+			//  it is valid as an identifier
+			//  The while loop should break out and print an error
+			//	message if something unexpected is seen. 
+			while (currTok == letter | currTok == digit)
+			{
+				getChar();
+				charType();
+			}
+			switch (currTok){
+				case ' ':
+					setTok = ident;
+				break;
+
+				default:
+					printf("Unexpexted character. Is not ident");
+					break;
+
+			}
+			break;
+
+
+
+		//	Default happens when an unexpected character is read 
+		//	and the current lexeme should be ignored...
+		//	Currently, there's no code to ignore the rest of the 
+		//	problem lexeme, but that can wait 
+		default:
+			printf("Unexpected character. Don't know what to do anymore");
+			break;
+	}
+
+
+
+	/*if ( currTok == letter ){  	
 		while (currTok == letter | currTok == digit){
 			getChar();
 			charType();
@@ -134,7 +201,7 @@ Token nextSym()
 	else if ( currTok != letter | currTok != digit){
 		setTok = ident; 
 		return setTok;
-	}
+	}*/
 
 }
 
