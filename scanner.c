@@ -20,15 +20,20 @@ typedef enum { 								// OBERON 2, not OBERON S
 			 	whileStatement, repeatStatement, loopStatement, withStatement 
 			} Token;
 
+const char *resWords [41][64];
+const int RESWORD_SIZE = 41;
+
 Token currTok;
 const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
+const int WORD_SIZE = 64;
 char currChar;
 char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
-int count = -1;					// Global counter for current line position
-char currWord [64];				//Word being worked on. Delimited by found whitespaces 
-								//and to be compared to a table of reserved words
+int count = 0;					// Global counter for current line position
+char currWord [64];				// Word being worked on. Delimited by found whitespaces 
+								// and to be compared to a table of reserved words
 Token setTok;
+int gotNewLine;
 
 FILE *toScan;
 
@@ -60,9 +65,60 @@ int isHexDigit(char aChar)
 
 int isSep(char aChar)
 {
-	if (aChar == ' ' || aChar == '\t')			// if its a space
+	if (aChar == ' ' || aChar == '\t' || aChar == '\n')			// if its a space
 		return 1;
+
+	if (gotNewLine)
+	{
+		gotNewLine = 0;
+		return 1;
+	}
+
 	return 0;
+}
+
+int isSepG()
+{
+	if (currChar == ' ' || currChar == '\t' || currChar == '\n')			// if its a space
+		return 1;
+
+	if (gotNewLine)
+	{
+		gotNewLine = 0;
+		return 1;
+	}
+
+	return 0;
+}
+
+int isResWord()
+{
+	int i;
+	for ( i = 0; i < RESWORD_SIZE; i++ )
+	{
+		if (strcmp(currWord, resWords[i]))
+			return 1;
+	}
+
+	return 0;
+}
+
+void clrWord()
+{
+	int i;
+	for ( i = 0; i < WORD_SIZE; i++ )
+	{
+		currWord[i] = '\0';
+	}
+}
+
+void clrLine()
+{
+	int i;
+	for ( i = 0; i < BUFF_SIZE; i++ )
+	{
+		currLine[i] = '\0';
+	}
 }
 
 //	*
@@ -70,9 +126,10 @@ int isSep(char aChar)
 //
 void getLine()
 {
-	
+	clrLine();
 	fgets(currLine, BUFF_SIZE, toScan);
-	fputs(currLine, stdout); 					// Debug MSG
+	//gotNewLine = 1;
+	//fputs(currLine, stdout); 					// Debug MSG
 
 }
 
@@ -85,20 +142,25 @@ void getLine()
 //
 void getChar()
 {
+
+	//int gotNewLine = 0;
+
 	//ok i'm assuming currline's size is Buff_size characters total
 	//starting at index 0, and will be over limit at or above buffSize
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
 	//calling this yet, so for now, it will collect all the characters as it gets 
 	//called and when it reaches Buff_size, it'll restart, so better hope we have a new line 
 	//by then.
-	if(count >= BUFF_SIZE || count == -1) 
+	if(count >= BUFF_SIZE || currLine[count] == '\n')
 	{
 		count = 0;
 		getLine(); 	
+		gotNewLine = 1;
 	}
 
 	currChar = currLine[count]; 
 	count ++;
+
 }
 
 
@@ -207,14 +269,91 @@ Token nextSym()
 
 }
 
+//	*
+//	Attempting to make a getWord method...
+//
+void getWord()
+{
+	int cursor = count;
+	int sCount = count;
+	clrWord();
+
+	while(isSepG())				// while the current character is a separator ...
+	{
+		getChar();				// ... get the next character
+	}
+
+	while(!isSepG() && (cursor - sCount) < WORD_SIZE)				// while the current character is not a separator ...
+	{
+		currWord[cursor - sCount] = currChar;
+		cursor++;
+		getChar();
+	}
+
+	// debug
+	currWord[WORD_SIZE - 1] = '\0';
+	fputs(currWord, stdout);
+	fputs("\n", stdout);
+
+}
+
+void initScanner()
+{
+	// Initial Reading
+	getLine();
+	getChar();
+
+	// Initialize Reserved Words
+	resWords [0][0] = "BOOLEAN";
+	resWords [1][0] = "CHAR";
+	resWords [2][0] = "FALSE";
+	resWords [3][0] = "INTEGER";
+	resWords [4][0] = "NEW";
+	resWords [5][0] = "REAL";
+	resWords [6][0] = "TRUE";
+	resWords [7][0] = "ARRAY";
+	resWords [8][0] = "BEGIN";
+	resWords [9][0] = "BY";
+	resWords [10][0] = "CASE";
+	resWords [11][0] = "CONST";
+	resWords [12][0] = "DIV";
+	resWords [13][0] = "DO";
+	resWords [14][0] = "ELSE";
+	resWords [15][0] = "ELSIF";
+	resWords [16][0] = "END";
+	resWords [17][0] = "EXIT";
+	resWords [18][0] = "FOR";
+	resWords [19][0] = "IF";
+	resWords [20][0] = "IMPORT";
+	resWords [21][0] = "IN";
+	resWords [22][0] = "IS";
+	resWords [23][0] = "LOOP";
+	resWords [24][0] = "MOD";
+	resWords [25][0] = "MODULE";
+	resWords [26][0] = "NIL";
+	resWords [27][0] = "OF";
+	resWords [28][0] = "OR";
+	resWords [29][0] = "POINTER";
+	resWords [30][0] = "PRODECURE";
+	resWords [31][0] = "RECORD";
+	resWords [32][0] = "REPEAT";
+	resWords [33][0] = "RETURN";
+	resWords [34][0] = "THEN";
+	resWords [35][0] = "TO";
+	resWords [36][0] = "TYPE";
+	resWords [37][0] = "UNTIL";
+	resWords [38][0] = "VAR";
+	resWords [39][0] = "WHILE";
+	resWords [40][0] = "WITH";
+
+}
+
 //
 //	Scans the file and outputs the tokens to the screen.
 //
 void scan()
 {
-	// getChar();				// gets the first character
-
-
+	initScanner();
 
 }
 
