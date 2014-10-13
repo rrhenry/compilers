@@ -183,25 +183,134 @@ void charType()
 //	Return the next symbol.
 //
 Token nextSym()
-{
+{	
+	//---S0---\\
+
 	getChar();					//	get first character initally//
-	charType();					//	S0, determing character type//
+	charType();					//	determing character type//
 	
+
 	switch (currTok) 
 	{
-		case digit: 			//	S1 starts looking for reals and ints//
-			
-			//	S2 keeps looking for a digit until it finds either
-			// '.', whitespace or a hexdigit 
+//---------------------------------DIGIT CASE-------------------------------------------\\
+		case digit:
+		
+			//---S1---\\ 
+
+			//	starts looking for reals and ints
+			//	keeps looking for a digit until it finds either
+			//	'.', whitespace or a hexdigit  
+			while( currTok == digit)
+			{
+				getChar();
+				charType();
+			}
+
 			// '.' can branch to REAL after a digit or
 			//	will lead to three more states until it reaches REAL
 			//	whitespace leads straight to an asignment to INT
 			//	hexdigit will keep looking for hexdigit until H or X are found
-			//	H will lead to INT and X should lead to STRING. 
+			//	H will lead to INT and X should lead to STRING.
+			switch (currTok)
+			{
+				
+			//-------------Real Branch Start-------------\\
 
-			break;
+				//---S2---\\
 
+				case '.':			//	starts the real branch... looking
+									//	for more digits and an optional scaleFac 
+					getChar();
+					charType();
 
+					//	Looking for series of digits
+					while( currTok == digit)
+					{
+						getChar();
+						charType();
+					}
+
+					//	Looking for either ScaleFac or Epsilon
+					switch (currTok)
+					{
+						
+						//----EPSILON REAL----\\
+
+						//	If, after the '.' and series of digits
+						//	there is just a whitespace, it's a real
+						case ' ':
+							setTok = real;
+							printf("This is a real w/o scaleFac\n");
+							break;
+
+						//----SCALEFAC REAL----\\
+
+						//---S3---\\
+
+						//	If not, look for potential scaleFac
+						case 'E':	//	it finds either E or D 
+						case 'D':	//	and looks for a following (+|-)
+									//	If it doesn't find one, it will break
+							//---S4---\\
+							getChar();
+							if(currChar != '+' | currChar != '-')
+							{
+								printf("\'+\' or \'-\' expected...\n"); //debug
+								break;
+							}
+							//---S5---\\
+
+							//	Now, we're looking for a series of digits
+							getChar();
+							charType();
+							if(currTok == digit)
+							{
+								getChar();
+								charType();
+								while(currTok == digit)
+								{
+									getChar();
+									charType();
+								}
+							}
+
+							//	End of series of digit ... checking for final epsilon
+							if(currChar == ' ')	
+							{
+								setTok = real;
+								printf("This is a scaleFac real!!!\n");
+							}
+							break;
+
+							default:
+								printf("This was the real branch, but something went wrong"); //debug
+							break;
+				
+					} //SWITCH REAL
+				break;  //BREAK REAL
+
+			//-------------Int Branch Epsilon------------\\
+
+				case ' ':
+					//stuff
+				break;
+
+			//------------Hexdigit Branch Start-----------\\
+
+				case hexDigit:
+					//stuff
+				break;
+
+			//-----------------Default---------------------\\
+				default:
+					printf("Unexpected character: not a digit after all"); //debug
+				break;
+
+			} //SWITCH DIGIT
+
+		break; //BREAK DIGIT
+
+//---------------------------------STRING CASE------------------------------------------\\
 
 		case '\"': 				//	S8 starts to look for a string//
 			
@@ -212,10 +321,11 @@ Token nextSym()
 				getChar();
 			}
 			setTok = string; 
+			printf("This is a string"); //debug
+		
+		break; //BREAK STRING
 
-			break;
-
-
+//---------------------------------LETTER CASE------------------------------------------\\
 
 		case letter: 			//	S9 starts looking for an ident//
 
@@ -230,19 +340,34 @@ Token nextSym()
 				getChar();
 				charType();
 			}
+
 			switch (currTok){
+				
+				//	End of word reached
 				case ' ':
 					setTok = ident;
+					printf("This is an identifier"); //debug
 				break;
 
+
+				//	Unexpected character found. Bailing out.
 				default:
 					printf("Unexpexted character. Is not ident");
 					break;
 
-			}
+			}	//SWTICH LETTER
+		break; //BREAK LETTER
+
+//---------------------------------WHITESPACE CASE--------------------------------------\\
+
+		//	If, for some reason, the character is a whitespace, 
+		//	just keep going through to the next character
+		case ' ':
+			getChar();
+			printf("This has been a space... moving on"); //debug
 			break;
 
-
+//---------------------------------DEFAULT CASE-----------------------------------------\\
 
 		//	Default happens when an unexpected character is read 
 		//	and the current lexeme should be ignored...
@@ -252,20 +377,6 @@ Token nextSym()
 			printf("Unexpected character. Don't know what to do anymore");
 			break;
 	}
-
-
-
-	/*if ( currTok == letter ){  	
-		while (currTok == letter | currTok == digit){
-			getChar();
-			charType();
-		}
-
-	}
-	else if ( currTok != letter | currTok != digit){
-		setTok = ident; 
-		return setTok;
-	}*/
 
 }
 
