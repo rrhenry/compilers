@@ -3,7 +3,7 @@
 typedef enum { 								// OBERON 2, not OBERON S
 				module, 
 				ident, letter, digit,
-			 	importList, import,
+			 	importList, _import,
 			 	declarationSequence, constantDeclaration,
 			 	identdef,
 			 	constExpression, expression, simpleExpression,
@@ -345,6 +345,8 @@ Token nextSym()
 				
 				//	End of word reached
 				case ' ':
+				case ';':
+				case '*':
 					setTok = ident;
 					printf("This is an identifier"); //debug
 				break;
