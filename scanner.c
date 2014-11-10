@@ -2,7 +2,7 @@
 
 // this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
-				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual,
+				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, 
 				ident, letter, digit, resWord, number,
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
@@ -60,6 +60,8 @@ const int WORD_SIZE = 64;
 char currChar;
 char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
+int lineLen = 0;
+int inptr = 0;
 int count = 0;					// Global counter for current line position
 int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
@@ -211,6 +213,7 @@ void clrLine()
 	int i;
 	for ( i = 0; i < BUFF_SIZE; i++ )
 	{
+		if (currLine[i] == '\0') break;
 		currLine[i] = '\0';
 	}
 }
@@ -218,7 +221,7 @@ void clrLine()
 //	*
 //	Get a line and put it in currLine.
 //
-void getLine()
+void getLineLegacy()
 {
 	clrLine();
 	fgets(currLine, BUFF_SIZE, toScan);
@@ -233,6 +236,41 @@ void getLine()
 
 }
 
+void getLine()
+{
+	clrLine();
+	lineNo ++;
+
+	inptr = 0;
+	char theChar = getc(toScan);
+
+	currLine[inptr] = theChar;
+
+	while ( theChar != '\n' && inptr <= BUFF_SIZE && theChar != EOF && theChar != '\0' )
+	{
+		// putc(theChar, stdout);
+		theChar = getc(toScan);
+		inptr ++;
+		currLine[inptr] = theChar;
+		// putc(currWord[inptr], stdout);
+	}
+
+	if (theChar == EOF)
+	{
+		eofParsed = 1;
+		printf("EOF Reached.");
+	}
+
+	lineLen = inptr;
+	inptr = 0;
+/*	if (feof(toScan))
+	{
+		eofParsed = 1;
+		fputs("END OF FILE REACHED.", stdout);
+	}*/
+
+}
+
 //	*
 //	Get a character and put it in currChar.
 //	-- might be useless
@@ -243,6 +281,8 @@ void getLine()
 void getChar()
 {
 
+	//printf("Calling getChar()...\n");
+
 	//int gotNewLine = 0;
 
 	//ok i'm assuming currline's size is Buff_size characters total
@@ -251,22 +291,25 @@ void getChar()
 	//calling this yet, so for now, it will collect all the characters as it gets 
 	//called and when it reaches Buff_size, it'll restart, so better hope we have a new line 
 	//by then.
-	if(count >= BUFF_SIZE || currLine[count] == '\n')
+	if(inptr == lineLen)
 	{
-		printf("NEWLINE ENCOUNTERED!\n");
-		count = 0;
+		/*if (count >= BUFF_SIZE) printf("Buffer Exceeded.\n");
+		else if (currLine[count] == '\n') printf("Newline Encountered!\n");
+		else if (currLine[count] == '\0') printf("Pseudo-newline Encountered!\n"); */
 		getLine(); 	
 		gotNewLine = 1;
 	}
 
-	currChar = currLine[count]; 
-	count ++;
+	currChar = currLine[inptr]; 
+	inptr ++;
+	 
+	//putc(currChar, stdout);
 
 }
 
 void moveUp()
 {
-	while (isSep(currChar))
+	while (isSep(currChar) || lineNo == 0)
 	{
 		getChar();
 	}
@@ -383,9 +426,9 @@ void scanIdent()
 
 void writeSym()
 {
-
+	fputs("[", stdout);
 	fputs(symNames[currTok][0], stdout);
-	fputs(" ", stdout);
+	fputs("] ", stdout);
 
 	switch (currTok)
 	{
@@ -416,7 +459,10 @@ Token nextSym()
 	// getChar();					// get first character initally//
 	// charType();					// S0, determing character type// ?? -- ok
 
-	printf("Debug: %c -- ", currChar);
+	// printf("Debug: %c -- ", currChar);
+	// printf("there is a character:");
+	// putc(currChar, stdout);
+	// printf("\n");
 
 	if ( isAlpha(currChar) )
 	{
@@ -613,8 +659,8 @@ Token nextSym()
 void initScanner()
 {
 	// Initial Reading
-	getLine();
-	getChar();
+	// getLine();
+	// getChar();
 	eofParsed = 0;
 
 	// Initialize Reserved Words
@@ -729,6 +775,7 @@ void initSpecialSyms()
 	specialSymbols[';'] = semic;
 	specialSymbols['^'] = hat;
 	specialSymbols['#'] = notEqual;
+	specialSymbols[','] = comma;
 
 }
 
@@ -802,6 +849,7 @@ void initSymNames()
 	 symNames[    assign][0] = "ASSIGN";
 	 symNames[    hat][0] = "HAT";
 	 symNames[    notEqual][0] = "NOT_EQUAL";
+	 symNames[    comma][0] = "COMMA";
 }
 
 //
@@ -816,9 +864,19 @@ void scan()
 	// while (currTok != eofSym)
 	// 	nextSym();
 
+	// printf("Debug: %c -- %d \n", currChar, lineNo);
+	/*while (eofParsed == 0)
+	{
+		// currChar = getc(toScan);
+		// putc(currChar, stdout);
+		// nextSym();
+		// printf("Debug: %c -- %d \n", currChar, lineNo);
+		// if (currChar == EOF)
+		// 	break;
+	}*/
+
 	while (eofParsed == 0)
 	{
-		//printf("hahahahaha, no\n");
 		nextSym();
 	}
 
