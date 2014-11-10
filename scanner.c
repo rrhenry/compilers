@@ -2,7 +2,7 @@
 
 // this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
-				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, 
+				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, period,
 				ident, letter, digit, resWord, number,
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
@@ -100,7 +100,7 @@ int isHexDigit(char aChar)
 
 int isSep(char aChar)
 {
-	if (aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r')// || currChar == ')' || currChar == '(')			// if its a space
+	if (aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r')// || aChar == '\0')// || currChar == ')' || currChar == '(')			// if its a space
 		return 1;
 
 	/*if (gotNewLine)
@@ -291,7 +291,7 @@ void getChar()
 	//calling this yet, so for now, it will collect all the characters as it gets 
 	//called and when it reaches Buff_size, it'll restart, so better hope we have a new line 
 	//by then.
-	if(inptr == lineLen)
+	if(inptr >= lineLen)
 	{
 		/*if (count >= BUFF_SIZE) printf("Buffer Exceeded.\n");
 		else if (currLine[count] == '\n') printf("Newline Encountered!\n");
@@ -459,7 +459,7 @@ Token nextSym()
 	// getChar();					// get first character initally//
 	// charType();					// S0, determing character type// ?? -- ok
 
-	// printf("Debug: %c -- ", currChar);
+	//printf("Debug: %c -- ", currChar);
 	// printf("there is a character:");
 	// putc(currChar, stdout);
 	// printf("\n");
@@ -776,6 +776,7 @@ void initSpecialSyms()
 	specialSymbols['^'] = hat;
 	specialSymbols['#'] = notEqual;
 	specialSymbols[','] = comma;
+	specialSymbols['.'] = period;
 
 }
 
@@ -850,6 +851,7 @@ void initSymNames()
 	 symNames[    hat][0] = "HAT";
 	 symNames[    notEqual][0] = "NOT_EQUAL";
 	 symNames[    comma][0] = "COMMA";
+	 symNames[    period][0] = "PERIOD";
 }
 
 //
