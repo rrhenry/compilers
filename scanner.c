@@ -67,8 +67,7 @@ int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
 								// and to be compared to a table of reserved words
 Token setTok;
-int gotNewLine;
-int eofParsed;
+int eofParsed = 0;
 
 FILE *toScan;
 
@@ -102,12 +101,6 @@ int isSep(char aChar)
 {
 	if (aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r')// || aChar == '\0')// || currChar == ')' || currChar == '(')			// if its a space
 		return 1;
-
-	/*if (gotNewLine)
-	{
-		gotNewLine = 0;
-		return 1;
-	}*/
 
 	return 0;
 }
@@ -159,12 +152,6 @@ int isSepG()
 {
 	if (currChar == ' ' || currChar == '\t' || currChar == '\n' || currChar == '\r')//|| currChar == ')' || currChar == '(')			// if its a space
 		return 1;
-
-/*	if (gotNewLine) 
-	{
-		gotNewLine = 0;
-		return 1;
-	}*/
 
 	return 0;
 }
@@ -231,8 +218,6 @@ void getLineLegacy()
 		fputs("END OF FILE REACHED.", stdout);
 	}
 	lineNo ++;
-	//gotNewLine = 1;
-	//fputs(currLine, stdout); 					// Debug MSG
 
 }
 
@@ -263,11 +248,6 @@ void getLine()
 
 	lineLen = inptr;
 	inptr = 0;
-/*	if (feof(toScan))
-	{
-		eofParsed = 1;
-		fputs("END OF FILE REACHED.", stdout);
-	}*/
 
 }
 
@@ -280,11 +260,6 @@ void getLine()
 //
 void getChar()
 {
-
-	//printf("Calling getChar()...\n");
-
-	//int gotNewLine = 0;
-
 	//ok i'm assuming currline's size is Buff_size characters total
 	//starting at index 0, and will be over limit at or above buffSize
 	//this is sorta shit implementation, but i don't have a clear idea what will be 
@@ -293,11 +268,7 @@ void getChar()
 	//by then.
 	if(inptr >= lineLen)
 	{
-		/*if (count >= BUFF_SIZE) printf("Buffer Exceeded.\n");
-		else if (currLine[count] == '\n') printf("Newline Encountered!\n");
-		else if (currLine[count] == '\0') printf("Pseudo-newline Encountered!\n"); */
-		getLine(); 	
-		gotNewLine = 1;
+		getLine(); 
 	}
 
 	currChar = currLine[inptr]; 
@@ -324,25 +295,12 @@ void getWord()	// assumes we're on the first letter of a word
 	int sCount = count;
 	clrWord();
 
-	//currWord[0] = currChar;
-	//cursor ++;
-
-	/*while(isSepG())				// while the current character is a separator ...
-	{
-		getChar();				// ... get the next character
-	}*/
-
 	while(isAlpha(currChar) && (cursor - sCount) < WORD_SIZE)				// while the current character is not a separator ...
 	{
 		currWord[cursor - sCount] = currChar;
 		cursor++;
 		getChar();
 	}
-
-	// debug
-	currWord[WORD_SIZE - 1] = '\0';
-	/*fputs(currWord, stdout);
-	fputs("\n", stdout);*/
 
 }
 
@@ -456,13 +414,6 @@ void writeSym()
 Token nextSym()
 {
 	moveUp();					    // in case of white space
-	// getChar();					// get first character initally//
-	// charType();					// S0, determing character type// ?? -- ok
-
-	//printf("Debug: %c -- ", currChar);
-	// printf("there is a character:");
-	// putc(currChar, stdout);
-	// printf("\n");
 
 	if ( isAlpha(currChar) )
 	{
@@ -494,21 +445,30 @@ Token nextSym()
 				currTok = lt;
 				getChar();
 				if ( currChar == '=' )
+				{
 					currTok = lte;
+					getChar(); // we need to move up to the next character
+				}
 				break;
 
 			case '>':
 				currTok = gt;
 				getChar();
 				if ( currChar == '=' )
+				{
 					currTok = gte;
+					getChar();
+				}
 				break;
 
 			case ':':
 				currTok = colon;
 				getChar();
 				if ( currChar == '=')
+				{
 					currTok = assign;
+					getChar();
+				}
 				break;
 
 			default:
@@ -519,150 +479,10 @@ Token nextSym()
 	}
 
 	writeSym();
-
-	/*switch (currChar) 
-	{
-		case digit: 			//	S1 starts looking for reals and ints//
-			
-			//	S2 keeps looking for a digit until it finds either
-			// '.', whitespace or a hexdigit 
-			// '.' can branch to REAL after a digit or 
-			//	will lead to three more states until it reaches REAL 
-			//	whitespace leads straight to an asignment to INT 
-			//	hexdigit will keep looking for hexdigit until H or X are found 
-			//	H will lead to INT and X should lead to STRING.  
-
-			while (isDigit(currChar))	// eat all digits 
-			{
-				getChar();	
-			}
-
-			if (!isSepG())
-			{
-				printf("Invalid number format.");
-			}
-			else
-			{
-				currTok = number;
-			}
-
-			break;			
-
-
-
-		case '\"': 				//	S8 starts to look for a string//      --- this isn't going to work, it's not a sym
-			
-			//	Keep fetching the next character until you find the
-			//	next quote. Upon finding, it, set setTok to String
-			while( currChar != '\"')
-			{
-				getChar();
-			}
-			setTok = string; 
-
-			break;
-
-
-
-		case letter: 			//	S9 starts looking for an ident
-		    //  z or a digit, 
-			//  it is valid as an identifier
-			//  The while loop should break out and print an error
-			//	message if something unexpected is seen. 
-			//	A whitespace is the only ending case that should 
-			//	lead to a proper ident.  
-
-
-			getWord();
-
-			if (isResWord())
-			{
-				currTok = resWord;
-				//fputs("resWord  ", stdout);
-			}
-			else if (isIdent())
-			{
-				currTok = ident;
-				//fputs("ident  ", stdout);
-			}
-
-			break;
-
-		case opSym:
-
-
-			break;
-
-		case '(':
-
-			getChar();
-
-			if (currChar == '*')
-			{
-				//comment situation
-				dealWithComment();
-			}
-
-			break;
-
-		case eofSym:
-			printf("Scanning complete.");
-			break;
-
-		//	Default happens when an unexpected character is read 
-		//	and the current lexeme should be ignored...
-		//	Currently, there's no code to ignore the rest of the 
-		//	problem lexeme, but that can wait 
-		default:
-			printf("Unexpected character. Don't know what to do anymore");
-			break;
-	}// end switch*/
-
-	// debug switch
-/*	switch (currTok)
-	{
-		case number:
-			fputs("number   ", stdout);
-			//fputs(currWord, stdout);
-			break;
-		case ident:
-			fputs("ident    ", stdout);
-			fputs(currWord, stdout);
-			break;
-		case resWord:
-			fputs("resWord  ", stdout);
-			fputs(currWord, stdout);
-			break;
-		default:
-		break;
-
-	}*/
-/*
-	fputs("\n", stdout);*/
-
-	/*if ( currTok == letter ){  	
-		while (currTok == letter | currTok == digit){
-			getChar();
-			charType();
-		}
-
-	}
-	else if ( currTok != letter | currTok != digit){
-		setTok = ident; 
-		return setTok;
-	}*/
-
-
-
 }
 
 void initScanner()
 {
-	// Initial Reading
-	// getLine();
-	// getChar();
-	eofParsed = 0;
-
 	// Initialize Reserved Words
 	resWords [0][0] = "BOOLEAN";
 	resWords [1][0] = "CHAR";
@@ -758,8 +578,6 @@ void initSpecialSyms()
 		specialSymbols[i] = null;
 	}
 
-	// lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, gt, semic
-
 	specialSymbols['('] = lparen;
 	specialSymbols[')'] = rparen;
 	specialSymbols['+'] = plus;
@@ -843,6 +661,7 @@ void initSymNames()
 	 symNames[    equal][0] = "EQUAL";
 	 symNames[    colon][0] = "COLON";
 	 symNames[    lt][0] = "LT";
+	 symNames[    lte][0] = "LTE";
 	 symNames[    gt][0] = "GT";
 	 symNames[    gte][0] = "GTE";
 	 symNames[    semic][0] = "SEMIC";
@@ -863,32 +682,10 @@ void scan()
 	initSymNames();
 	initSpecialSyms();
 
-	// while (currTok != eofSym)
-	// 	nextSym();
-
-	// printf("Debug: %c -- %d \n", currChar, lineNo);
-	/*while (eofParsed == 0)
-	{
-		// currChar = getc(toScan);
-		// putc(currChar, stdout);
-		// nextSym();
-		// printf("Debug: %c -- %d \n", currChar, lineNo);
-		// if (currChar == EOF)
-		// 	break;
-	}*/
-
 	while (eofParsed == 0)
 	{
 		nextSym();
 	}
-
-/*	getWord();
-	if(isResWord())
-	{
-		fputs(currWord, stdout);
-		printf("\nok..");
-	}*/
-
 }
 
 int main( int argc, char *argv[] )
@@ -907,24 +704,3 @@ int main( int argc, char *argv[] )
 
 	return 0;
 }
-
-
-//
-//	Surgically removed code...
-//
-
-			/*while (currTok == letter | currTok == digit)				// from Letter in nextSym
-			{
-				getChar();
-				charType();
-			}
-			switch (currTok){
-				case ' ':
-					setTok = ident;
-				break;
-
-				default:
-					printf("Unexpexted character. Is not ident");
-					break;
-
-			}*/
