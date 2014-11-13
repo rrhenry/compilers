@@ -323,37 +323,37 @@ void charType()
 
 void dealWithComment()
 {
-	getChar();
+	int nestLvl = 1;
 
-	while (currChar != '*')// || currChar != '(')
+	do
 	{
 		getChar();
 
-		if (currChar == '(')
+		if (currChar == EOF)
 		{
-			// it could be a new comment
-			getChar();
-			if (currChar == '*')
+			printf("Oops, end of file encoutered in comment.");
+			nestLvl = 0;
+			break;
+		}
+		else if (currChar == '(')
+		{
+			if ( inptr < BUFF_SIZE && currLine[inptr] == '*')
 			{
-				// it is a new comment.
-				dealWithComment();
+				nestLvl++;
+				getChar();
+			}
+		}
+		else if (currChar == '*')
+		{
+			if ( inptr < BUFF_SIZE && currLine[inptr] == ')')
+			{
+				nestLvl--;
+				getChar();
 			}
 		}
 
-	}
-
-	// which situation is it; end or nested comment?
-	if (currChar == '*')
-	{
-		getChar();
-		if (currChar == ')')
-		{
-			// end comment
-			return;
-		}
-	}
-
-
+	} while (nestLvl > 0);
+	getChar();
 }
 
 void scanNum()
@@ -414,6 +414,7 @@ void writeSym()
 Token nextSym()
 {
 	moveUp();					    // in case of white space
+	int wasComment = 0;
 
 	if ( isAlpha(currChar) )
 	{
@@ -436,7 +437,7 @@ Token nextSym()
 				}
 				else
 				{
-					// comment
+					wasComment = 1;
 					dealWithComment();
 				}
 				break;
@@ -477,8 +478,10 @@ Token nextSym()
 				break;
 		}
 	}
-
-	writeSym();
+	if (wasComment == 0)
+	{
+		writeSym();
+	}
 }
 
 void initScanner()
@@ -686,6 +689,7 @@ void scan()
 	{
 		nextSym();
 	}
+
 }
 
 int main( int argc, char *argv[] )
