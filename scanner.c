@@ -66,6 +66,7 @@ int count = 0;					// Global counter for current line position
 int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
 								// and to be compared to a table of reserved words
+int gotNewLine = 0;
 Token setTok;
 int eofParsed = 0;
 
@@ -249,7 +250,7 @@ void getLine()
 	lineLen = inptr;
 	inptr = 0;
 
-	printf("\n");
+	gotNewLine = 1;
 
 }
 
@@ -271,10 +272,15 @@ void getChar()
 	if(inptr >= lineLen)
 	{
 		getLine(); 
+		currChar = '\n';
 	}
-
-	currChar = currLine[inptr]; 
-	inptr ++;
+	else
+	{
+		currChar = currLine[inptr]; 
+		inptr ++;
+	}
+	
+	
 	 
 	//putc(currChar, stdout);
 
@@ -544,6 +550,12 @@ void writeSym()
 	}
 
 	fputs("] ", stdout);
+
+	if (gotNewLine == 1 && lineNo != 1)
+	{
+		printf("\n");
+		gotNewLine = 0;
+	}
 }
 
 //
@@ -828,12 +840,13 @@ void scan()
 	initSymNames();
 	initSpecialSyms();
 
+	fputs("\nScanning ... Begin.\n\n", stdout);
 	while (eofParsed == 0)
 	{
 		nextSym();
 	}
 
-	fputs("\n\nScanning complete.\n\n", stdout);
+	fputs("\nScanning complete.\n\n", stdout);
 
 }
 
