@@ -249,6 +249,8 @@ void getLine()
 	lineLen = inptr;
 	inptr = 0;
 
+	printf("\n");
+
 }
 
 //	*
@@ -472,7 +474,10 @@ void scanString()
 		{
 			getChar();
 			if ( currChar == '\"')
-				getChar();
+			{
+				getChar();	// if it's a backslash quote walk over it
+
+			}
 		}
 
 		if ( currChar == '\"')
@@ -482,42 +487,50 @@ void scanString()
 		}
 		getChar();
 	}
+	getChar();	// to move past the /" we parsed upon exit
 }
 
 void writeSym()
 {
 	fputs("[", stdout);
 	fputs(symNames[currTok][0], stdout);
-	fputs("] ", stdout);
+	
 
 	switch (currTok)
 	{
 		case ident:
+			fputs(": ", stdout);
 			fputs(currWord, stdout);
 			break;
 
 		case interger:
+			fputs(": ", stdout);
 			fputs("interger ", stdout);
 
 			break;
 
 		case hexDigit:
+			fputs(": ", stdout);
 			fputs("hex digit ", stdout);
 			break;
 
 		case realDec:
+			fputs(": ", stdout);
 			fputs("decimal real ", stdout);
 			break;
 
 		case scaleFac:
+			fputs(": ", stdout);
 			fputs("scale factorial ", stdout);
 			break;
 
 		case hexString:
+			fputs(": ", stdout);
 			fputs("hex string ", stdout);
 			break;
 
 		case string:
+			fputs(": ", stdout);
 			fputs("string ", stdout);
 			break;
 
@@ -527,7 +540,7 @@ void writeSym()
 
 	}
 
-	fputs("\n", stdout);
+	fputs("] ", stdout);
 }
 
 //
@@ -800,6 +813,7 @@ void initSymNames()
 	 symNames[    notEqual][0] = "NOT_EQUAL";
 	 symNames[    comma][0] = "COMMA";
 	 symNames[    period][0] = "PERIOD";
+	 symNames[    string][0] = "STRING";
 }
 
 //
@@ -815,6 +829,8 @@ void scan()
 	{
 		nextSym();
 	}
+
+	fputs("\n\nScanning complete.\n\n", stdout);
 
 }
 
