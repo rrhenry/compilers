@@ -373,7 +373,6 @@ void scanNum()
 
 	if (currChar == '.')
 	{
-		printf("We're.... happy?");
 		getChar();
 		while( isDigit(currChar) )
 		{
@@ -406,75 +405,50 @@ void scanNum()
 			}
 		}
 	}
+
+	else if ( isSep(currChar) || currChar == ';')
+	{
+		currTok = integer;
+	}
+
+	else if ( isHexDigit(currChar) )
+	{
+		while( isHexDigit(currChar) )
+		{
+			getChar();
+		} 
+		if( currChar == 'H' )
+		{	
+			getChar();
+			if( isSep(currChar) || currChar == ';' )
+			{
+				currTok = hexDigit;
+			}
+				
+		}
+		else if ( currChar == 'X' )
+		{
+			getChar();
+			if( isSep(currChar) || currChar == ';' )
+			{
+				currTok = hexString;
+			}
+				
+		}
+	}
+	else if ( currChar == 'H' )
+	{
+		getChar();
+		if( isSep(currChar) || currChar == ';' )
+		{
+			currTok = hexDigit;
+		}
+	}	
+
 	else 
 	{
-		switch ( currChar )
-		{
-			//----REAL----\\
-			case '.':
-				
-			break; //break REAL
-
-			//----INTEGER----\\
-			case ' ':
-			case '\t':
-			case '\n':
-			case '\r':
-			case ';':
-				currTok = integer;
-			break;
-
-
-			//----HEXDIGIT----\\
-			case 'A':
-			case 'B':
-			case 'C':
-			case 'D':
-			case 'E':
-			case 'F':
-				while( isHexDigit(currChar))
-				{
-					getChar();
-				} 
-				if( currChar == 'H' )
-				{	
-					getChar();
-					if( isSep(currChar) || currChar == ';' )
-					{
-						currTok = hexDigit;
-						break;
-					}
-						
-				}
-				else if ( currChar == 'X' )
-				{
-					getChar();
-					if( isSep(currChar) || currChar == ';' )
-					{
-						currTok = hexString;
-						break;
-					}
-						
-				}
-			break;
-
-			//----HEXDIGIT WITHOUT HEX DIGITS---\\
-			case 'H':
-				getChar();
-				if( isSep(currChar) || currChar == ';' )
-				{
-					currTok = hexDigit;
-					break;
-				}
-
-			break;
-
-			default:
-				currTok = number;
-			break;
-
-		} //switch end
-	}// else end
+		currTok = number;
+	}
 }
 
 
@@ -552,10 +526,6 @@ void writeSym()
 
 		case hexString:
 			fputs("hex string", stdout);
-			break;
-
-		case string:
-			fputs("string", stdout);
 			break;
 
 		default:
