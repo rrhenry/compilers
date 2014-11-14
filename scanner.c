@@ -440,8 +440,11 @@ void scanNum()
 			if( isSep(currChar) )
 				currTok = hexDigit;
 
+		break;
 
+		default:
 
+		break;
 
 	} //switch end
 
