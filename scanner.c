@@ -371,106 +371,110 @@ void scanNum()
 		getChar();
 	}
 
-	switch ( currChar )
+	if (currChar == '.')
 	{
-		//----REAL----\\
-		case '.':
+		printf("We're.... happy?");
+		getChar();
+		while( isDigit(currChar) )
+		{
 			getChar();
-			while( isDigit(currChar) )
+		}
+
+		//---DECIMAL---\\
+		if( isSep(currChar)  || currChar == ';' )
+		{
+			currTok = realDec;
+		}
+
+		//---SCALE FAC---\\
+		else if( currChar == 'E' || currChar == 'D' )
+		{	
+			getChar();
+			if( currChar == '+' || currChar == '-' )
 			{
 				getChar();
-			}
 
-			//---DECIMAL---\\
-			if( isSep(currChar)  || currChar == ';' )
-			{
-				currTok = realDec;
-				break;
-			}
+				while ( isDigit(currChar) )	
+					getChar();
+			
 
-			//---SCALE FAC---\\
-			else if( currChar == 'E' || currChar == 'D' )
-			{	
-				getChar();
-				if( currChar == '+' || currChar == '-' )
+				if( isSep(currChar) || currChar == ';' )
+				{
+					currTok = scaleFac;
+				}
+		
+			}
+		}
+	}
+	else 
+	{
+		switch ( currChar )
+		{
+			//----REAL----\\
+			case '.':
+				
+			break; //break REAL
+
+			//----INTEGER----\\
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+			case ';':
+				currTok = integer;
+			break;
+
+
+			//----HEXDIGIT----\\
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+				while( isHexDigit(currChar))
 				{
 					getChar();
-
-					while ( isDigit(currChar) )	
-						getChar();
-				
-
+				} 
+				if( currChar == 'H' )
+				{	
+					getChar();
 					if( isSep(currChar) || currChar == ';' )
 					{
-						currTok = scaleFac;
+						currTok = hexDigit;
 						break;
 					}
-			
+						
 				}
-			}
+				else if ( currChar == 'X' )
+				{
+					getChar();
+					if( isSep(currChar) || currChar == ';' )
+					{
+						currTok = hexString;
+						break;
+					}
+						
+				}
+			break;
 
-		break; //break REAL
-
-		//----INTEGER----\\
-		case ' ':
-		case '\t':
-		case '\n':
-		case '\r':
-		case ';':
-			currTok = integer;
-		break;
-
-
-		//----HEXDIGIT----\\
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-			while( isHexDigit(currChar))
-			{
-				getChar();
-			} 
-			if( currChar == 'H' )
-			{	
+			//----HEXDIGIT WITHOUT HEX DIGITS---\\
+			case 'H':
 				getChar();
 				if( isSep(currChar) || currChar == ';' )
 				{
 					currTok = hexDigit;
 					break;
 				}
-					
-			}
-			else if ( currChar == 'X' )
-			{
-				getChar();
-				if( isSep(currChar) || currChar == ';' )
-				{
-					currTok = hexString;
-					break;
-				}
-					
-			}
-		break;
 
-		//----HEXDIGIT WITHOUT HEX DIGITS---\\
-		case 'H':
-			getChar();
-			if( isSep(currChar) || currChar == ';' )
-			{
-				currTok = hexDigit;
-				break;
-			}
+			break;
 
-		break;
+			default:
+				currTok = number;
+			break;
 
-		default:
-			currTok = number;
-		break;
-
-	} //switch end
-
+		} //switch end
+	}// else end
 }
 
 
