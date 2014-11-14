@@ -1,9 +1,9 @@
 #include <stdio.h>		// need for file io
-
+#include <string.h>
 // this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, period,
-				ident, letter, digit, resWord, number,
+				ident, letter, digit, resWord, number, interger, realDec, hexDigit, scaleFac, hexString, string, 
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
 			    BEGIN_SYM,
@@ -358,13 +358,93 @@ void dealWithComment()
 
 void scanNum()
 {
-	while ( isDigit(currChar) )
+	while( isDigit(currChar) )
 	{
 		getChar();
 	}
 
-	currTok = number;
+	switch ( currChar )
+	{
+		//----REAL----\\
+		case '.':
+			getChar();
+			while( isDigit(currChar) )
+			{
+				getChar();
+			}
+
+			//---DECIMAL---\\
+			if( isSep(currChar) )
+			{
+				currTok = realDec;
+			}
+
+			//---SCALE FAC---\\
+			if( currChar == 'E' || currChar == 'D')
+			{	
+				getChar();
+				if( currChar == '+' || currChar == '-')
+				{
+					getChar();
+
+					while ( isDigit(currChar) )	
+						getChar();
+				
+
+					if( isSep(currChar) )
+						currTok = scaleFac;
+				}
+			}
+
+		break; //break REAL
+
+		//----INTEGER----\\
+		case ' ':
+		case '\t':
+		case '\n':
+		case '\r':
+			currTok = interger;
+		break;
+
+
+		//----HEXDIGIT----\\
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+			while( isHexDigit(currChar))
+			{
+				getChar();
+			} 
+			if( currChar == 'H' )
+			{	
+				getChar();
+				if( isSep(currChar) )
+					currTok = hexDigit;
+			}
+			else if ( currChar == 'X' )
+			{
+				getChar();
+				if( isSep(currChar) )
+					currTok = hexString;
+			}
+		break;
+
+		//----HEXDIGIT WITHOUT HEX DIGITS---\\
+		case 'H':
+			getChar();
+			if( isSep(currChar) )
+				currTok = hexDigit;
+
+
+
+
+	} //switch end
+
 }
+
 
 void scanIdent()
 {
@@ -382,6 +462,28 @@ void scanIdent()
 	}
 }
 
+void scanString()
+{
+	getChar();
+	int endString = 0;
+	while ( endString <=0 )
+	{
+		if ( currChar == '\\' )
+		{
+			getChar();
+			if ( currChar == '\"')
+				getChar();
+		}
+
+		if ( currChar == '\"')
+		{
+			currTok = string;
+			break;
+		}
+		getChar();
+	}
+}
+
 void writeSym()
 {
 	fputs("[", stdout);
@@ -394,9 +496,29 @@ void writeSym()
 			fputs(currWord, stdout);
 			break;
 
-		case number:
-			fputs("number ", stdout);
+		case interger:
+			fputs("interger ", stdout);
 
+			break;
+
+		case hexDigit:
+			fputs("hex digit ", stdout);
+			break;
+
+		case realDec:
+			fputs("decimal real ", stdout);
+			break;
+
+		case scaleFac:
+			fputs("scale factorial ", stdout);
+			break;
+
+		case hexString:
+			fputs("hex string ", stdout);
+			break;
+
+		case string:
+			fputs("string ", stdout);
 			break;
 
 		default:
@@ -411,7 +533,7 @@ void writeSym()
 //
 //	Return the next symbol.
 //
-Token nextSym()
+void nextSym()
 {
 	moveUp();					    // in case of white space
 	int wasComment = 0;
@@ -470,6 +592,10 @@ Token nextSym()
 					currTok = assign;
 					getChar();
 				}
+				break;
+
+			case '"':
+				scanString();
 				break;
 
 			default:
