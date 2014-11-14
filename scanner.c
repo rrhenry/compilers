@@ -244,7 +244,7 @@ void getLine()
 	if (theChar == EOF)
 	{
 		eofParsed = 1;
-		printf("EOF Reached.");
+		//printf("EOF Reached.");
 	}
 
 	lineLen = inptr;
@@ -389,10 +389,10 @@ void scanNum()
 			}
 
 			//---SCALE FAC---\\
-			else if( currChar == 'E' || currChar == 'D')
+			else if( currChar == 'E' || currChar == 'D' )
 			{	
 				getChar();
-				if( currChar == '+' || currChar == '-')
+				if( currChar == '+' || currChar == '-' )
 				{
 					getChar();
 
@@ -400,7 +400,7 @@ void scanNum()
 						getChar();
 				
 
-					if( isSep(currChar) )
+					if( isSep(currChar) || currChar == ';' )
 					{
 						currTok = scaleFac;
 						break;
@@ -435,7 +435,7 @@ void scanNum()
 			if( currChar == 'H' )
 			{	
 				getChar();
-				if( isSep(currChar) )
+				if( isSep(currChar) || currChar == ';' )
 				{
 					currTok = hexDigit;
 					break;
@@ -445,7 +445,7 @@ void scanNum()
 			else if ( currChar == 'X' )
 			{
 				getChar();
-				if( isSep(currChar) )
+				if( isSep(currChar) || currChar == ';' )
 				{
 					currTok = hexString;
 					break;
@@ -457,7 +457,7 @@ void scanNum()
 		//----HEXDIGIT WITHOUT HEX DIGITS---\\
 		case 'H':
 			getChar();
-			if( isSep(currChar) )
+			if( isSep(currChar) || currChar == ';' )
 			{
 				currTok = hexDigit;
 				break;
