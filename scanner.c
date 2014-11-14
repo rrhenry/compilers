@@ -3,7 +3,7 @@
 // this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, period,
-				ident, letter, digit, resWord, number, interger, realDec, hexDigit, scaleFac, hexString, string, 
+				ident, letter, digit, resWord, number, integer, realDec, hexDigit, scaleFac, hexString, string, 
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
 			    BEGIN_SYM,
@@ -382,13 +382,14 @@ void scanNum()
 			}
 
 			//---DECIMAL---\\
-			if( isSep(currChar) )
+			if( isSep(currChar)  || currChar == ';' )
 			{
 				currTok = realDec;
+				break;
 			}
 
 			//---SCALE FAC---\\
-			if( currChar == 'E' || currChar == 'D')
+			else if( currChar == 'E' || currChar == 'D')
 			{	
 				getChar();
 				if( currChar == '+' || currChar == '-')
@@ -400,7 +401,11 @@ void scanNum()
 				
 
 					if( isSep(currChar) )
+					{
 						currTok = scaleFac;
+						break;
+					}
+			
 				}
 			}
 
@@ -411,7 +416,8 @@ void scanNum()
 		case '\t':
 		case '\n':
 		case '\r':
-			currTok = interger;
+		case ';':
+			currTok = integer;
 		break;
 
 
@@ -430,13 +436,21 @@ void scanNum()
 			{	
 				getChar();
 				if( isSep(currChar) )
+				{
 					currTok = hexDigit;
+					break;
+				}
+					
 			}
 			else if ( currChar == 'X' )
 			{
 				getChar();
 				if( isSep(currChar) )
+				{
 					currTok = hexString;
+					break;
+				}
+					
 			}
 		break;
 
@@ -444,12 +458,15 @@ void scanNum()
 		case 'H':
 			getChar();
 			if( isSep(currChar) )
+			{
 				currTok = hexDigit;
+				break;
+			}
 
 		break;
 
 		default:
-
+			currTok = number;
 		break;
 
 	} //switch end
@@ -512,35 +529,29 @@ void writeSym()
 			fputs(currWord, stdout);
 			break;
 
-		case interger:
-			fputs(": ", stdout);
-			fputs("interger ", stdout);
+		case integer:
+			fputs("integer", stdout);
 
 			break;
 
 		case hexDigit:
-			fputs(": ", stdout);
-			fputs("hex digit ", stdout);
+			fputs("hex digit", stdout);
 			break;
 
 		case realDec:
-			fputs(": ", stdout);
-			fputs("decimal real ", stdout);
+			fputs("decimal real", stdout);
 			break;
 
 		case scaleFac:
-			fputs(": ", stdout);
-			fputs("scale factorial ", stdout);
+			fputs("scale factorial", stdout);
 			break;
 
 		case hexString:
-			fputs(": ", stdout);
-			fputs("hex string ", stdout);
+			fputs("hex string", stdout);
 			break;
 
 		case string:
-			fputs(": ", stdout);
-			fputs("string ", stdout);
+			fputs("string", stdout);
 			break;
 
 		default:
