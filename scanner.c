@@ -406,11 +406,13 @@ void scanNum()
 		}
 	}
 
+	//----INTEGER----\\
 	else if ( isSep(currChar) || currChar == ';')
 	{
 		currTok = integer;
 	}
 
+	//----HEX DIGIT----\\
 	else if ( isHexDigit(currChar) )
 	{
 		while( isHexDigit(currChar) )
@@ -426,6 +428,8 @@ void scanNum()
 			}
 				
 		}
+
+		//--Hex String--\\
 		else if ( currChar == 'X' )
 		{
 			getChar();
@@ -436,6 +440,7 @@ void scanNum()
 				
 		}
 	}
+
 	else if ( currChar == 'H' )
 	{
 		getChar();
@@ -445,6 +450,7 @@ void scanNum()
 		}
 	}	
 
+	//----Default----\\
 	else 
 	{
 		currTok = number;
