@@ -279,8 +279,6 @@ void getChar()
 		currChar = currLine[inptr]; 
 		inptr ++;
 	}
-	
-	
 	 
 	//putc(currChar, stdout);
 
@@ -405,14 +403,10 @@ void scanNum()
 			}
 		}
 	}
-
-	//----INTEGER----\\
 	else if ( isSep(currChar) || currChar == ';')
 	{
 		currTok = integer;
 	}
-
-	//----HEX DIGIT----\\
 	else if ( isHexDigit(currChar) )
 	{
 		while( isHexDigit(currChar) )
@@ -440,7 +434,6 @@ void scanNum()
 				
 		}
 	}
-
 	else if ( currChar == 'H' )
 	{
 		getChar();
@@ -449,8 +442,6 @@ void scanNum()
 			currTok = hexDigit;
 		}
 	}	
-
-	//----Default----\\
 	else 
 	{
 		currTok = number;
