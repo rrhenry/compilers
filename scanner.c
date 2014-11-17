@@ -531,7 +531,7 @@ void writeSym()
 
 	}
 
-	fputs("] ", stdout);
+	fputs("] \n", stdout);
 
 	if (gotNewLine == 1 && lineNo != 1)
 	{
