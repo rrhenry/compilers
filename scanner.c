@@ -380,7 +380,7 @@ void scanNum()
 		//---DECIMAL---\\
 		if( isSep(currChar)  || currChar == ';' )
 		{
-			currTok = realDec;
+			currTok = number;
 		}
 
 		//---SCALE FAC---\\
@@ -397,7 +397,7 @@ void scanNum()
 
 				if( isSep(currChar) || currChar == ';' )
 				{
-					currTok = scaleFac;
+					currTok = number;
 				}
 		
 			}
@@ -405,7 +405,7 @@ void scanNum()
 	}
 	else if ( isSep(currChar) || currChar == ';')
 	{
-		currTok = integer;
+		currTok = number;
 	}
 	else if ( isHexDigit(currChar) )
 	{
@@ -418,7 +418,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				currTok = hexDigit;
+				currTok = number;
 			}
 				
 		}
@@ -429,7 +429,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				currTok = hexString;
+				currTok = number;
 			}
 				
 		}
@@ -439,7 +439,7 @@ void scanNum()
 		getChar();
 		if( isSep(currChar) || currChar == ';' )
 		{
-			currTok = hexDigit;
+			currTok = number;
 		}
 	}	
 	else 
