@@ -1,9 +1,15 @@
+// Oberon Scanner
+//	Alexi Turcotte
+//	Roxanne Henry
+
+
+
 #include <stdio.h>		// need for file io
 #include <string.h>
 // this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, period,
-				ident, letter, digit, resWord, number, integer, realDec, hexDigit, scaleFac, hexString, string, 
+				ident, resWord, number, string, 
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
 			    BEGIN_SYM,
@@ -310,23 +316,6 @@ void getWord()	// assumes we're on the first letter of a word
 
 }
 
-// *
-// Determines if currChar is a digit (0...9) or a letter (a...z | A...Z)
-// sets currTok to relevant state
-// -- might merge this with getChar because who wants to call this everytime
-//
-void charType()
-{
-	if(isDigit(currChar))
-		currTok = digit;
-	else if (isAlpha(currChar))
-		currTok = letter;
-	else if (isOp(currChar))
-		currTok = opSym;
-	else
-		currTok = invalidSym;
-}
-
 void dealWithComment()
 {
 	int nestLvl = 1;
@@ -429,7 +418,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				currTok = number;
+				currTok = string;
 			}
 				
 		}
@@ -504,26 +493,10 @@ void writeSym()
 			fputs(currWord, stdout);
 			break;
 
-		case integer:
-			fputs("integer", stdout);
+		//case number:
+		//	fputs("integer", stdout);
 
-			break;
-
-		case hexDigit:
-			fputs("hex digit", stdout);
-			break;
-
-		case realDec:
-			fputs("decimal real", stdout);
-			break;
-
-		case scaleFac:
-			fputs("scale factorial", stdout);
-			break;
-
-		case hexString:
-			fputs("hex string", stdout);
-			break;
+		//	break;
 
 		default:
 
