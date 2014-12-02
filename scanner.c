@@ -827,31 +827,76 @@ End of scanner.
 
 Beginning of Parser.																				*/
 
-int expect (Token t)
+void expect (Token t)
 {
-	if (currTok == t)
+	if (currTok != t)
 	{
-		nextSym();
-		return 1;
+		fputs("Unexpexted token ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs(". ", stdout);
+		fputs(symNames[t][0], stdout);
+		fputs(" expected", stdout);
+		
 	}
-	return 0;
+	nextSym();
 }
 
-void Modlue ()
+
+void ImportList ()
 {
 
-	if (currTok	== MODULE_SYM)
-		nextSym();
-
-	if (currTok == IDENT)
-		nextSym();
-
-	while (currTok == SEMIC)
+	expect(IMPORT_SYM);
+	expect(ident);
+	if(currTok == colon)
 	{
-
+		expect(equal);
+		expect(ident);
 	}
+	
+	while(currTok == comma)
+	{
+		expect(ident);
+		if(currTok == colon)
+		{
+			expect(equal);
+			expect(ident);
+		}
+		
+	}	
 
+	expect(SEMIC);
+}
+
+
+void Module ()
+{
+
+	expect(MODULE_SYM);
+	expect(ident);
+	expect(SEMIC);
+
+	ImportList();
 	//DeclSeq();
 
+	expect(BEGIN_SYM);
 
+	//StatSeq();
+
+	expect(END_SYM);
+	expect(ident);
+	expect(period);	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
