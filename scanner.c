@@ -825,7 +825,8 @@ int main( int argc, char *argv[] )
 /*
 End of scanner.
 
-Beginning of Parser.																				*/
+Beginning of Parser.																				
+*/
 
 void expect (Token t)
 {
@@ -841,19 +842,70 @@ void expect (Token t)
 	nextSym();
 }
 
+void qualident()
+{
+	nextSym();
+	if(currTok == ident)
+		expect(period);
+	expect(ident);
+}
 
+/*
+void type ()
+{
+	qualident();
+	StrucType();
+}
+*/
+
+
+// we cheat lookahead with this...
+// in that everywhere that calls this has 
+// it as an option, so we check for lParen 
+// before calling this.
+// -- Sidenote, this ends with qualident()
+// -- which ends on an expect(ident)... 
+// -- There shouldn't be a need to call nextSym()
+// -- after calling this.
+void FormParams()
+{
+	nextSym();
+	
+	do
+	{
+		if(currTok == VAR_SYM)
+		nextSym();
+
+		expect(ident);
+
+		while (currTok == comma)
+		{
+			nextSym();
+			expect(ident);
+		}
+
+		expect(colon);
+		expect(ARRAY_SYM);
+		expect(OF_SYM);
+		qualident();
+
+		//nextSym();    // Probably shouldn't need this since 
+						// every state SHOULD call nextSym()
+						// one way or another at the end.
+	}while(currTok == SEMIC);
+
+	expect(rparen);
+	expect(colon);
+	qualident();
+}
+
+// don't need to call nextSym() after calling this
 void ImportList ()
 {
-
+	nextSym();
 	expect(IMPORT_SYM);
-	expect(ident);
-	if(currTok == colon)
-	{
-		expect(equal);
-		expect(ident);
-	}
-	
-	while(currTok == comma)
+
+	do
 	{
 		expect(ident);
 		if(currTok == colon)
@@ -861,12 +913,133 @@ void ImportList ()
 			expect(equal);
 			expect(ident);
 		}
-		
-	}	
+	}while(currTok == comma);
 
 	expect(SEMIC);
 }
 
+// shouldn't need to call nextSym() after calling this
+void StrucType ()
+{
+	nextSym();
+	if(currTok == RECORD_SYM)
+	{
+		nextSym();
+		if(currTok == lparen)
+		{
+			qualident();
+			expect(rparen);
+		}
+		
+		do
+		{
+			expect(ident);
+			if(currTok == mul)
+				nextSym();
+
+			if(currTok == comma)
+			{
+				nextSym();
+				expect(ident);
+				if(currTok == mul)
+					nextSym();
+			}
+			expect(colon);
+			type();
+		}while(currTok == SEMIC);
+		
+		expect(END_SYM);
+	}
+	else if(currTok == ARRAY_SYM)
+	{
+		nextSym();
+		
+		do
+		{
+			expr();
+		}while(currTok == comma);
+
+		expect(OF_SYM);
+		type();
+	}
+	else if(currTok == POINTER_SYM)
+	{
+		nextSym();
+		expect(TO_SYM);
+		type();
+	}
+	else if(PROCEDURE_SYM)
+	{
+		nextSym();
+		if(currTok == lparen)
+			FormParams();
+	}
+
+}
+
+// don't need to call nextSym() after calling this
+void DeclSeq ()
+{
+	nextSym();
+	if (currTok == CONST_SYM)
+	{
+		nextSym();
+		while (currTok == ident)
+		{
+			nextSym();
+			if(currTok == mul)
+				nextSym();
+			expect(equal);
+			expr();
+			expect(SEMIC);
+		}
+
+	}
+	else if (currTok == TYPE_SYM)
+	{
+		nextSym();
+		while(currTok == ident)
+		{
+			nextSym();
+			if(currTok == mul)
+				nextSym();
+			expect(equal);
+			StrucType();
+			expect(SEMIC);
+		}
+	}
+	else if (currTok == VAR_SYM)
+	{
+		nextSym();
+		while(currTok == ident)
+		{
+			nextSym();
+			if(currTok == mul)
+				nextSym();
+			if(currTok == comma)
+			{
+				expect(ident);
+				if(currTok == mul)
+					nextSym();
+				expect(colon);
+
+			}
+			type();
+			expect(SEMIC);
+		}
+
+	}
+
+	else if (currTok == PROCEDURE_SYM)      //Double check this to make sure it's not crazy talk
+	{
+		do
+		{
+			ProcDecl();
+			expect(SEMIC);	
+		} while(currTok == PROCEDURE_SYM);
+	}
+
+}
 
 void Module ()
 {
