@@ -1,14 +1,14 @@
-// Oberon Scanner
-//	Alexi Turcotte
-//	Roxanne Henry
+//  Oberon Sparser
+//_specialization.jetAlexi Turcotte
+//_specialization.jetRoxanne Henry
 
 
 
 #include <stdio.h>		// need for file io
 #include <string.h>
-// this token stuff might have to be ... simpler? like: letter, colon, semicolon, etc. -- yes
+// this token stuff might have to be ... simpler? like: letter, colon, SEMIColon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
-				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, semic, null, assign, hat, notEqual, comma, period,
+				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, notEqual, comma, period,
 				ident, resWord, number, string, 
 			 	eofSym, invalidSym, opSym,
 			 	ARRAY_SYM,
@@ -702,7 +702,7 @@ void initSpecialSyms()
 	specialSymbols[':'] = colon;
 	specialSymbols['<'] = lt;
 	specialSymbols['>'] = gt;
-	specialSymbols[';'] = semic;
+	specialSymbols[';'] = SEMIC;
 	specialSymbols['^'] = hat;
 	specialSymbols['#'] = notEqual;
 	specialSymbols[','] = comma;
@@ -776,7 +776,7 @@ void initSymNames()
 	 symNames[    lte][0] = "LTE";
 	 symNames[    gt][0] = "GT";
 	 symNames[    gte][0] = "GTE";
-	 symNames[    semic][0] = "SEMIC";
+	 symNames[    SEMIC][0] = "SEMIC";
 	 symNames[    null][0] = "NULL";
 	 symNames[    assign][0] = "ASSIGN";
 	 symNames[    hat][0] = "HAT";
@@ -820,4 +820,38 @@ int main( int argc, char *argv[] )
 	}
 
 	return 0;
+}
+
+/*
+End of scanner.
+
+Beginning of Parser.																				*/
+
+int expect (Token t)
+{
+	if (currTok == t)
+	{
+		nextSym();
+		return 1;
+	}
+	return 0;
+}
+
+void Modlue ()
+{
+
+	if (currTok	== MODULE_SYM)
+		nextSym();
+
+	if (currTok == IDENT)
+		nextSym();
+
+	while (currTok == SEMIC)
+	{
+
+	}
+
+	//DeclSeq();
+
+
 }
