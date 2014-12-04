@@ -6,6 +6,7 @@
 
 #include <stdio.h>		// need for file io
 #include <string.h>
+#include "scanner.h"
 // this token stuff might have to be ... simpler? like: letter, colon, SEMIColon, etc. -- yes
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, notEqual, comma, period,
@@ -72,6 +73,8 @@ int count = 0;					// Global counter for current line position
 int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
 								// and to be compared to a table of reserved words
+char currNum [64];      		// Simply saving the num so as to pass it on over later,
+								// if needed.
 int gotNewLine = 0;
 Token setTok;
 int eofParsed = 0;
@@ -202,6 +205,15 @@ void clrWord()
 	}
 }
 
+void clrNum()
+{
+	int i;
+	for( i = 0; i < WORD_SIZE; i++)
+	{
+		currNum[i] = '\0';
+	}
+}
+
 void clrLine()
 {
 	int i;
@@ -314,6 +326,23 @@ void getWord()	// assumes we're on the first letter of a word
 		getChar();
 	}
 
+}
+
+// *
+// Attemptint a getNum method
+// 
+void getNum()	
+{
+	int cursor = count;
+	int sCount = count;
+	clrNum();
+
+	while((isDigit(currChar) || isHexDigit(currChar)) && (cursor - sCount) < WORD_SIZE)
+	{
+		currNum[cursor = sCount] = currChar;
+		cursor++;
+		getChar();
+	}
 }
 
 void dealWithComment()
@@ -493,10 +522,11 @@ void writeSym()
 			fputs(currWord, stdout);
 			break;
 
-		//case number:
-		//	fputs("integer", stdout);
+		case number:
+			fputs(": ", stdout);
+			fputs(currNum, stdout);   //NEED TO MAKE A CURRNUM METHOD
 
-		//	break;
+			break;
 
 		default:
 
@@ -799,11 +829,14 @@ void scan()
 	while (eofParsed == 0)
 	{
 		nextSym();
+		Module();
+		fputs("Parse???",stdout);
 	}
 
 	fputs("\nScanning complete.\n\n", stdout);
 
 }
+
 
 int main( int argc, char *argv[] )
 {	
@@ -839,42 +872,82 @@ void expect (Token t)
 		fputs(" expected", stdout);
 		
 	}
+	fputs("CurrTok: ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs("\n\n", stdout);
 	nextSym();
+
+	fputs("CurrTok: ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs("\n\n", stdout);
 }
 
 void qualident()
 {
-	nextSym();
+	fputs("This is a qualident\n", stdout);
 	if(currTok == ident)
 		expect(period);
 	expect(ident);
 }
 
-/*
 void type ()
 {
-	qualident();
-	StrucType();
+	//lookahead, if ident, qual, 
+	//if rec, arr, poi, proc struct
+	//qualident();
+	//StrucType();
+	fputs("This is type\n", stdout);
 }
-*/
 
 
-// we cheat lookahead with this...
-// in that everywhere that calls this has 
-// it as an option, so we check for lParen 
-// before calling this.
-// -- Sidenote, this ends with qualident()
-// -- which ends on an expect(ident)... 
-// -- There shouldn't be a need to call nextSym()
-// -- after calling this.
-void FormParams()
+void ProcDecl()
 {
+	fputs("This is procdecl\n", stdout);
+	expect(ident);
+	if(currTok == mul)
+		nextSym();
+	if(currTok == lparen)
+		nextSym();
+		FormParams();
+	expect(SEMIC);
 	nextSym();
+	DeclSeq();
+	if(currTok == BEGIN_SYM)
+	{
+		nextSym();
+		StatSeq();
+	}
+}
+
+void expr ()
+{
+	fputs("This is expr\n", stdout);
+	expect(number);
+}
+
+void StatSeq ()
+{
+	fputs("This is statseq\n", stdout);
+	//do
+	//{
+//		nextSym();
+//		stat();
+//	}while(currTok == SEMIC);
 	
+}
+
+void stat ()
+{
+	fputs("This is stat\n", stdout);
+}
+
+void FormParams ()
+{
+	fputs("This is FormParams\n", stdout);
 	do
 	{
 		if(currTok == VAR_SYM)
-		nextSym();
+			nextSym();
 
 		expect(ident);
 
@@ -902,8 +975,8 @@ void FormParams()
 // don't need to call nextSym() after calling this
 void ImportList ()
 {
-	nextSym();
-	expect(IMPORT_SYM);
+	fputs("This is importList\n", stdout);
+	//expect(IMPORT_SYM);
 
 	do
 	{
@@ -921,12 +994,14 @@ void ImportList ()
 // shouldn't need to call nextSym() after calling this
 void StrucType ()
 {
-	nextSym();
+	fputs("This is StrucType\n", stdout);
+
 	if(currTok == RECORD_SYM)
 	{
 		nextSym();
 		if(currTok == lparen)
 		{
+			nextSym();
 			qualident();
 			expect(rparen);
 		}
@@ -952,10 +1027,10 @@ void StrucType ()
 	}
 	else if(currTok == ARRAY_SYM)
 	{
-		nextSym();
 		
 		do
 		{
+			nextSym();
 			expr();
 		}while(currTok == comma);
 
@@ -968,10 +1043,11 @@ void StrucType ()
 		expect(TO_SYM);
 		type();
 	}
-	else if(PROCEDURE_SYM)
+	else if(currTok == PROCEDURE_SYM)
 	{
 		nextSym();
 		if(currTok == lparen)
+			nextSym();
 			FormParams();
 	}
 
@@ -980,7 +1056,8 @@ void StrucType ()
 // don't need to call nextSym() after calling this
 void DeclSeq ()
 {
-	nextSym();
+	fputs("This is DeclSeq\n", stdout);
+
 	if (currTok == CONST_SYM)
 	{
 		nextSym();
@@ -991,9 +1068,9 @@ void DeclSeq ()
 				nextSym();
 			expect(equal);
 			expr();
+			fputs("Have left Expr\n", stdout);
 			expect(SEMIC);
 		}
-
 	}
 	else if (currTok == TYPE_SYM)
 	{
@@ -1034,6 +1111,7 @@ void DeclSeq ()
 	{
 		do
 		{
+			nextSym();
 			ProcDecl();
 			expect(SEMIC);	
 		} while(currTok == PROCEDURE_SYM);
@@ -1048,12 +1126,14 @@ void Module ()
 	expect(ident);
 	expect(SEMIC);
 
-	ImportList();
-	//DeclSeq();
+	if(currTok == IMPORT_SYM)
+		ImportList();
+
+	DeclSeq();
 
 	expect(BEGIN_SYM);
 
-	//StatSeq();
+	StatSeq();
 
 	expect(END_SYM);
 	expect(ident);
