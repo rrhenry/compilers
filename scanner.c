@@ -373,19 +373,15 @@ void scanNum()
 		while( isDigit(currChar) )
 		{
 			getChar();
-			//putc(currChar, stdout);
 		}
 
-		//---DECIMAL---\\
-		if( isSep(currChar)  || currChar == ';' )
+
+		if( isSep(currChar) || currChar == ';' || currChar == EOF) // Real
 		{
-			//putc(currChar, stdout);
 			fputs("Setting for Decimal\n", stdout);
-			currTok = number;
+			currTok = REAL_SYM;
 		}
-
-		//---SCALE FAC---\\
-		else if( currChar == 'E' || currChar == 'D' )
+		else if( currChar == 'E' || currChar == 'D' ) // Scalefac
 		{	
 			getChar();
 			if( currChar == '+' || currChar == '-' )
@@ -393,15 +389,13 @@ void scanNum()
 				getChar();
 
 				while ( isDigit(currChar) )	
-					getChar();
-			
+					getChar();		
 
-				if( isSep(currChar) || currChar == ';' )
+				if( isSep(currChar) || currChar == ';' || currChar == EOF)
 				{
 					fputs("Setting for ScaleFac\n", stdout);
 					currTok = number;
 				}
-		
 			}
 		}
 	}
@@ -427,7 +421,7 @@ void scanNum()
 				
 		}
 
-		//--Hex String--\\
+		//--Hex String
 		else if ( currChar == 'X' )
 		{
 			getChar();
