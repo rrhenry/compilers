@@ -380,7 +380,7 @@ void scanNum()
 		}
 
 		//---DECIMAL---\\
-		if( isSep(currChar)  && currChar == ';' )
+		if( isSep(currChar)  || currChar == ';' )
 		{
 			//putc(currChar, stdout);
 			fputs("Setting for Decimal\n", stdout);
