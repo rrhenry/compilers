@@ -328,23 +328,6 @@ void getWord()	// assumes we're on the first letter of a word
 
 }
 
-// *
-// Attemptint a getNum method
-// 
-void getNum()	
-{
-	int cursor = count;
-	int sCount = count;
-	clrNum();
-
-	while((isDigit(currChar) || isHexDigit(currChar)) && (cursor - sCount) < WORD_SIZE)
-	{
-		currNum[cursor = sCount] = currChar;
-		cursor++;
-		getChar();
-	}
-}
-
 void dealWithComment()
 {
 	int nestLvl = 1;
@@ -393,11 +376,14 @@ void scanNum()
 		while( isDigit(currChar) )
 		{
 			getChar();
+			//putc(currChar, stdout);
 		}
 
 		//---DECIMAL---\\
-		if( isSep(currChar)  || currChar == ';' )
+		if( isSep(currChar)  && currChar == ';' )
 		{
+			//putc(currChar, stdout);
+			fputs("Setting for Decimal\n", stdout);
 			currTok = number;
 		}
 
@@ -415,6 +401,7 @@ void scanNum()
 
 				if( isSep(currChar) || currChar == ';' )
 				{
+					fputs("Setting for ScaleFac\n", stdout);
 					currTok = number;
 				}
 		
@@ -423,6 +410,7 @@ void scanNum()
 	}
 	else if ( isSep(currChar) || currChar == ';')
 	{
+		fputs("Setting for integer\n", stdout);
 		currTok = number;
 	}
 	else if ( isHexDigit(currChar) )
@@ -436,6 +424,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
+				fputs("Setting for hexDigit\n", stdout);
 				currTok = number;
 			}
 				
@@ -447,6 +436,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
+				fputs("Setting for hexString\n", stdout);
 				currTok = string;
 			}
 				
@@ -520,12 +510,6 @@ void writeSym()
 		case ident:
 			fputs(": ", stdout);
 			fputs(currWord, stdout);
-			break;
-
-		case number:
-			fputs(": ", stdout);
-			fputs(currNum, stdout);   //NEED TO MAKE A CURRNUM METHOD
-
 			break;
 
 		default:
@@ -828,9 +812,9 @@ void scan()
 	fputs("\nScanning ... Begin.\n\n", stdout);
 	while (eofParsed == 0)
 	{
-		nextSym();
+		//nextSym();
 		Module();
-		fputs("Parse???",stdout);
+		//fputs("Parse???",stdout);
 	}
 
 	fputs("\nScanning complete.\n\n", stdout);
@@ -872,14 +856,8 @@ void expect (Token t)
 		fputs(" expected", stdout);
 		
 	}
-	fputs("CurrTok: ", stdout);
-		fputs(symNames[currTok][0], stdout);
-		fputs("\n\n", stdout);
-	nextSym();
 
-	fputs("CurrTok: ", stdout);
-		fputs(symNames[currTok][0], stdout);
-		fputs("\n\n", stdout);
+	nextSym();
 }
 
 void qualident()
@@ -1121,7 +1099,7 @@ void DeclSeq ()
 
 void Module ()
 {
-
+	nextSym();
 	expect(MODULE_SYM);
 	expect(ident);
 	expect(SEMIC);
@@ -1131,13 +1109,21 @@ void Module ()
 
 	DeclSeq();
 
-	expect(BEGIN_SYM);
-
-	StatSeq();
+	if(currTok == BEGIN_SYM)
+	{
+		nextSym();
+		StatSeq();
+	}
+		
 
 	expect(END_SYM);
 	expect(ident);
 	expect(period);	
+
+	// ++ That last expect never makes it out. 
+	// ++ Probably that it's trying to grab the next sym but there is non
+	// ++ so it panics?
+	fputs("Reached the end of Module", stdout);
 }
 
 
