@@ -77,9 +77,11 @@ char currNum [64];      		// Simply saving the num so as to pass it on over late
 								// if needed.
 int gotNewLine = 0;
 Token setTok;
-int eofParsed = 0;
+//int eofParsed = 0;
 
 FILE *toScan;
+
+void writeSym();
 
 int isDigit(char aChar)
 {
@@ -233,7 +235,7 @@ void getLineLegacy()
 	fgets(currLine, BUFF_SIZE, toScan);
 	if (feof(toScan)) 
 	{
-		eofParsed = 1;
+		//eofParsed = 1;
 		fputs("END OF FILE REACHED.", stdout);
 	}
 	lineNo ++;
@@ -259,14 +261,10 @@ void getLine()
 		// putc(currWord[inptr], stdout);
 	}
 
-	if (theChar == EOF)
-	{
-		eofParsed = 1;
-		//printf("EOF Reached.");
-	}
-
 	lineLen = inptr;
 	inptr = 0;
+
+	currChar = theChar;
 
 	gotNewLine = 1;
 
@@ -289,8 +287,7 @@ void getChar()
 	//by then.
 	if(inptr >= lineLen)
 	{
-		getLine(); 
-		currChar = '\n';
+		getLine();
 	}
 	else
 	{
@@ -304,7 +301,7 @@ void getChar()
 
 void moveUp()
 {
-	while (isSep(currChar) || lineNo == 0)
+	while (isSep(currChar))
 	{
 		getChar();
 	}
@@ -535,7 +532,11 @@ void nextSym()
 	moveUp();					    // in case of white space
 	int wasComment = 0;
 
-	if ( isAlpha(currChar) )
+	if (currChar == EOF)
+	{
+		currTok = eofSym;
+	}
+	else if ( isAlpha(currChar) )
 	{
 		scanIdent();
 	}
@@ -798,6 +799,7 @@ void initSymNames()
 	 symNames[    comma][0] = "COMMA";
 	 symNames[    period][0] = "PERIOD";
 	 symNames[    string][0] = "STRING";
+	 symNames[    eofSym][0] = "EOF";
 }
 
 //
@@ -810,10 +812,11 @@ void scan()
 	initSpecialSyms();
 
 	fputs("\nScanning ... Begin.\n\n", stdout);
-	while (eofParsed == 0)
+	getChar();
+	while (currTok != eofSym)
 	{
-		//nextSym();
-		Module();
+		nextSym();
+		//Module();
 		//fputs("Parse???",stdout);
 	}
 
@@ -841,7 +844,7 @@ int main( int argc, char *argv[] )
 
 /*
 End of scanner.
-
+=====================================================================================================
 Beginning of Parser.																				
 */
 
