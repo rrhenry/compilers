@@ -16,5 +16,11 @@ void ProcDecl();
 void StatSeq();
 void expr();
 void stat();
+void designator();
+void ActParams();
+void CaseStat();
+void WhileStat();
+void factor();
+void term();
 
 #endif

@@ -11,7 +11,7 @@
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, notEqual, comma, period,
 				ident, resWord, number, string, 
-			 	eofSym, invalidSym, opSym,
+			 	eofSym, invalidSym, opSym, SET_SYM, tilde, lcurly, rcurly,
 			 	ARRAY_SYM,
 			    BEGIN_SYM,
 			    BY_SYM,
@@ -34,6 +34,7 @@ typedef enum { 								// OBERON 2, not OBERON S
 			    NIL_SYM,
 			    OF_SYM,
 			    OR_SYM,
+				AND_SYM,
 			    POINTER_SYM,
 			    PROCEDURE_SYM,
 			    RECORD_SYM,
@@ -367,8 +368,9 @@ void scanNum()
 		getChar();
 	}
 
-	if (currChar == '.')
+	if (currChar == '.' && currLine[inptr] != '.') // need addtional lookahead for range op
 	{
+		
 		getChar();
 		while( isDigit(currChar) )
 		{
@@ -378,7 +380,7 @@ void scanNum()
 
 		if( isSep(currChar) || currChar == ';' || currChar == EOF) // Real
 		{
-			fputs("Setting for Decimal\n", stdout);
+			//fputs("Setting for Decimal\n", stdout);
 			currTok = REAL_SYM;
 		}
 		else if( currChar == 'E' || currChar == 'D' ) // Scalefac
@@ -393,7 +395,7 @@ void scanNum()
 
 				if( isSep(currChar) || currChar == ';' || currChar == EOF)
 				{
-					fputs("Setting for ScaleFac\n", stdout);
+					//fputs("Setting for ScaleFac\n", stdout);
 					currTok = number;
 				}
 			}
@@ -401,7 +403,7 @@ void scanNum()
 	}
 	else if ( isSep(currChar) || currChar == ';')
 	{
-		fputs("Setting for integer\n", stdout);
+		//fputs("Setting for integer\n", stdout);
 		currTok = number;
 	}
 	else if ( isHexDigit(currChar) )
@@ -415,7 +417,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				fputs("Setting for hexDigit\n", stdout);
+				//fputs("Setting for hexDigit\n", stdout);
 				currTok = number;
 			}
 				
@@ -427,7 +429,7 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				fputs("Setting for hexString\n", stdout);
+				//fputs("Setting for hexString\n", stdout);
 				currTok = string;
 			}
 				
@@ -533,9 +535,11 @@ void nextSym()
 	else if ( isAlpha(currChar) )
 	{
 		scanIdent();
+		//fputs("Scanned Ident\n",stdout);
 	}
 	else if (isDigit(currChar))
 	{
+		fputs("Scanned numba\n",stdout);
 		scanNum();
 	}
 	else
@@ -750,6 +754,7 @@ void initSymNames()
 	 symNames[    NIL_SYM][0] = "NIL_SYM";
 	 symNames[    OF_SYM][0] = "OF_SYM";
 	 symNames[    OR_SYM][0] = "OR_SYM";
+	 symNames[    AND_SYM][0] = "AND_SYM";
 	 symNames[    POINTER_SYM][0] = "POINTER_SYM";
 	 symNames[    PROCEDURE_SYM][0] = "PROCEDURE_SYM";
 	 symNames[    RECORD_SYM][0] = "RECORD_SYM";
@@ -769,10 +774,13 @@ void initSymNames()
 	 symNames[    NEW_SYM][0] = "NEW_SYM";
 	 symNames[    REAL_SYM][0] = "REAL_SYM";
 	 symNames[    TRUE_SYM][0] = "TRUE_SYM";
+	 symNames[	  SET_SYM][0] = "SET_SYM";
 	 symNames[    ident][0] = "IDENT";
 	 symNames[    number][0] = "NUMBER";
 	 symNames[    lparen][0] = "LPAREN";
 	 symNames[    rparen][0] = "RPAREN";
+	 symNames[    lcurly][0] = "LCURLY";
+	 symNames[    rcurly][0] = "RCURL";
 	 symNames[    plus][0] = "PLUS";
 	 symNames[    minus][0] = "MINUS";
 	 symNames[    mul][0] = "MUL";
@@ -793,6 +801,7 @@ void initSymNames()
 	 symNames[    comma][0] = "COMMA";
 	 symNames[    period][0] = "PERIOD";
 	 symNames[    string][0] = "STRING";
+	 symNames[    tilde][0] = "TILDE";
 	 symNames[    eofSym][0] = "EOF";
 }
 
@@ -807,12 +816,12 @@ void scan()
 
 	fputs("\nScanning ... Begin.\n\n", stdout);
 	getChar();
-	while (currTok != eofSym)
-	{
-		nextSym();
-		//Module();
+	//while (currTok != eofSym)
+	//{
+		//nextSym();
+		Module();
 		//fputs("Parse???",stdout);
-	}
+		//}
 
 	fputs("\nScanning complete.\n\n", stdout);
 
@@ -850,7 +859,7 @@ void expect (Token t)
 		fputs(symNames[currTok][0], stdout);
 		fputs(". ", stdout);
 		fputs(symNames[t][0], stdout);
-		fputs(" expected", stdout);
+		fputs(" expected\n", stdout);
 		
 	}
 
@@ -860,9 +869,12 @@ void expect (Token t)
 void qualident()
 {
 	fputs("This is a qualident\n", stdout);
-	if(currTok == ident)
-		expect(period);
-	expect(ident);
+	do
+	{
+		expect(ident);
+	}
+	while(currTok == period);
+	
 }
 
 void type ()
@@ -872,48 +884,308 @@ void type ()
 	//qualident();
 	//StrucType();
 	fputs("This is type\n", stdout);
-}
-
-
-void ProcDecl()
-{
-	fputs("This is procdecl\n", stdout);
-	expect(ident);
-	if(currTok == mul)
-		nextSym();
-	if(currTok == lparen)
-		nextSym();
-		FormParams();
-	expect(SEMIC);
 	nextSym();
-	DeclSeq();
-	if(currTok == BEGIN_SYM)
-	{
-		nextSym();
-		StatSeq();
-	}
 }
 
 void expr ()
 {
 	fputs("This is expr\n", stdout);
-	expect(number);
+	if ( currTok == plus | currTok == minus )
+	{
+		nextSym();
+	}
+	term();
+	while ( currTok == plus | currTok == minus | OR_SYM)
+	{
+		nextSym();
+	}
+	term();
+	fputs("Done expr\n", stdout);
+}
+
+void ActParams ()
+{
+	fputs("This is ActParams\n", stdout);
+	do
+	{
+		expr();
+	}while ( currTok == comma );
+	expect(rparen);
+	
+}
+
+void designator ()
+{
+	fputs("This is designator\n", stdout);
+	qualident();
+	while ( currTok == period | currTok == lbrac | currTok == hat | currTok == lparen ) 
+	{
+		if ( currTok == period)
+		{
+			nextSym();
+			expect(ident);
+		}
+			 
+		else if ( currTok ==  lbrac )
+		{
+			do
+			{
+				nextSym();
+				expr();
+			}while( currTok == comma );
+			expect(rbrac); 
+		}
+		else if ( currTok == hat )
+			nextSym();
+		else if ( currTok == lparen )
+		{
+			nextSym();
+			qualident();
+			expect(rparen);
+		}
+		
+	}
+}
+
+void set()
+{
+	do
+	{
+		expr();
+		if ( currTok == period )
+		{
+			nextSym();
+			if ( currTok == period )
+			{
+				expr();
+			}
+		}
+	}while ( currTok == comma ); 
+
+	expect(rcurly);
+	
+}
+
+void factor()
+{
+	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM )
+	{
+		nextSym();
+	}
+	else if ( currTok == ident )
+	{
+		ActParams();
+	}
+	else if ( currTok == lparen )
+	{
+		expr();
+	}
+	else if ( currTok == tilde )
+	{
+		factor();
+	}
+	else if ( currTok == lcurly )
+	{
+		set();
+	}
+	
+}
+
+void term()
+{
+	factor();
+	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
+	{
+		factor();
+	}
 }
 
 void StatSeq ()
 {
 	fputs("This is statseq\n", stdout);
-	//do
-	//{
-//		nextSym();
-//		stat();
-//	}while(currTok == SEMIC);
+	stat();
+	while (currTok == SEMIC)
+	{
+		nextSym();
+		stat();
+	}
+	fputs("Exiting StatSeq\n", stdout);
 	
+}
+
+void AssignStat ()
+{
+	fputs("This is AssignStat\n", stdout);
+	expr();
+}
+
+void RepeatStat ()
+{
+	StatSeq();
+	expect(UNTIL_SYM);
+	expr();
+}
+
+/*
+void ProcCall ()
+{
+	fputs("This is ProcCall\n", stdout);
+}
+*/
+
+void IfStat()
+{
+	fputs("This is IfStat\n", stdout);
+	expr();
+	expect(THEN_SYM);
+	StatSeq();
+	
+	while ( currTok ==  ELSIF_SYM)
+	{
+		nextSym();
+		expr();
+		nextSym();
+		expect(THEN_SYM);
+		StatSeq();
+	}
+	if ( currTok == ELSE_SYM )
+	{
+		StatSeq();
+	}
+	expect(END_SYM);
+}
+
+void caseP ()
+{
+	fputs("CASE HERE YO\n", stdout);
+	if( currTok == string | currTok == number | currTok == ident )
+	{
+		do
+		{
+			nextSym();
+			if ( currTok == period )
+			{
+				nextSym();
+				if ( currTok == period )
+				{
+					nextSym();
+					if ( currTok ==  string | currTok == number | currTok == ident)
+					{
+						nextSym();
+					}
+						
+				}
+			}
+			
+		}while ( currTok == comma);
+		
+		expect(SEMIC);
+		
+		StatSeq();		
+	}
+	fputs("CASE END YO\n", stdout);
+	
+}
+
+void CaseStat ()
+{
+	fputs("This is CaseStat\n", stdout);
+	expr();
+	expect(OF_SYM);
+	caseP();
+	while (currTok == OR_SYM)
+	{
+		nextSym();
+		caseP();
+	}
+	expect(END_SYM);
+}
+
+void WhileStat()
+{
+	expr();
+	expect(DO_SYM);
+	StatSeq();
+	while ( currTok == ELSIF_SYM)
+	{
+		nextSym();
+		expr();
+		expect(DO_SYM);
+		StatSeq();
+	}
+	expect(END_SYM);
+}
+
+void ForStat()
+{
+	expect(ident);
+	expect(assign);
+	expr();
+	expect(TO_SYM);
+	expr();
+	if (currTok == BY_SYM)
+	{
+		nextSym();
+		expr();
+	}
+	expect(DO_SYM);
+	StatSeq();
+	expect(END_SYM);
 }
 
 void stat ()
 {
-	fputs("This is stat\n", stdout);
+	fputs("ENTERING stat\n", stdout);
+	//  REPEATSTAT
+	if ( currTok == REPEAT_SYM )
+	{
+		RepeatStat();
+	} 
+	// ASSIGNSTAT or PROC CALL
+	else if ( currTok == ident )
+	{
+		designator();
+		//nextSym();
+		if( currTok == assign)
+		{
+			nextSym();
+			AssignStat();
+		}
+		else if( currTok == lparen)
+		{
+			nextSym();
+			ActParams();
+		}	
+		
+	}
+	// IFSTAT
+	else if ( currTok == IF_SYM)
+	{
+		nextSym();
+		IfStat();
+		
+	}
+	// CASESTAT
+	else if ( currTok == CASE_SYM )
+	{
+		nextSym();
+		CaseStat();
+			
+	}	
+	// WHILESTAT
+	else if ( currTok == WHILE_SYM )
+	{
+		nextSym();
+		WhileStat();
+		
+	} 
+	// FORSTAT
+	else if ( currTok == FOR_SYM)
+	{
+		nextSym();
+		ForStat();
+	}
+
 }
 
 void FormParams ()
@@ -936,37 +1208,44 @@ void FormParams ()
 		expect(ARRAY_SYM);
 		expect(OF_SYM);
 		qualident();
+		//nextSym();
 
-		//nextSym();    // Probably shouldn't need this since 
-						// every state SHOULD call nextSym()
-						// one way or another at the end.
 	}while(currTok == SEMIC);
 
 	expect(rparen);
 	expect(colon);
 	qualident();
+	fputs("End FormParams\n", stdout);
 }
 
-// don't need to call nextSym() after calling this
 void ImportList ()
 {
 	fputs("This is importList\n", stdout);
 	//expect(IMPORT_SYM);
 
-	do
+	expect(ident);
+	if(currTok == assign)
 	{
+		nextSym();
 		expect(ident);
-		if(currTok == colon)
+	}
+	
+	while(currTok == comma)
+	{
+		nextSym();
+		expect(ident);
+		if(currTok == assign)
 		{
-			expect(equal);
+			nextSym();
 			expect(ident);
 		}
-	}while(currTok == comma);
+	}
 
 	expect(SEMIC);
+	
+	fputs("End ImportList\n", stdout);
 }
 
-// shouldn't need to call nextSym() after calling this
 void StrucType ()
 {
 	fputs("This is StrucType\n", stdout);
@@ -1028,7 +1307,36 @@ void StrucType ()
 
 }
 
-// don't need to call nextSym() after calling this
+void ProcDecl ()
+{
+	expect(ident);
+	if(currTok == mul)
+		nextSym();
+	
+	if(currTok == lparen)
+	{
+		nextSym();
+		FormParams();
+	}
+		
+	expect(SEMIC);
+	DeclSeq();
+	if(currTok == BEGIN_SYM)
+	{
+		nextSym();
+		StatSeq();
+	}
+	
+	if(currTok == RETURN_SYM)
+	{	
+		nextSym();
+		expr();
+	}
+	expect(END_SYM);
+	expect(ident);
+	
+}
+
 void DeclSeq ()
 {
 	fputs("This is DeclSeq\n", stdout);
@@ -1043,7 +1351,6 @@ void DeclSeq ()
 				nextSym();
 			expect(equal);
 			expr();
-			fputs("Have left Expr\n", stdout);
 			expect(SEMIC);
 		}
 	}
@@ -1070,6 +1377,7 @@ void DeclSeq ()
 				nextSym();
 			if(currTok == comma)
 			{
+				nextSym();
 				expect(ident);
 				if(currTok == mul)
 					nextSym();
@@ -1082,7 +1390,7 @@ void DeclSeq ()
 
 	}
 
-	else if (currTok == PROCEDURE_SYM)      //Double check this to make sure it's not crazy talk
+	else if (currTok == PROCEDURE_SYM)
 	{
 		do
 		{
@@ -1092,6 +1400,7 @@ void DeclSeq ()
 		} while(currTok == PROCEDURE_SYM);
 	}
 
+	fputs("End of DeclSeq\n", stdout);
 }
 
 void Module ()
@@ -1102,7 +1411,11 @@ void Module ()
 	expect(SEMIC);
 
 	if(currTok == IMPORT_SYM)
+	{
+		nextSym();
 		ImportList();
+	}
+		
 
 	DeclSeq();
 
@@ -1117,9 +1430,6 @@ void Module ()
 	expect(ident);
 	expect(period);	
 
-	// ++ That last expect never makes it out. 
-	// ++ Probably that it's trying to grab the next sym but there is non
-	// ++ so it panics?
 	fputs("Reached the end of Module", stdout);
 }
 
