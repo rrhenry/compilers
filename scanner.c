@@ -208,15 +208,6 @@ void clrWord()
 	}
 }
 
-void clrNum()
-{
-	int i;
-	for( i = 0; i < WORD_SIZE; i++)
-	{
-		currNum[i] = '\0';
-	}
-}
-
 void clrLine()
 {
 	int i;
@@ -280,12 +271,6 @@ void getLine()
 //
 void getChar()
 {
-	//ok i'm assuming currline's size is Buff_size characters total
-	//starting at index 0, and will be over limit at or above buffSize
-	//this is sorta shit implementation, but i don't have a clear idea what will be 
-	//calling this yet, so for now, it will collect all the characters as it gets 
-	//called and when it reaches Buff_size, it'll restart, so better hope we have a new line 
-	//by then.
 	if(inptr >= lineLen)
 	{
 		getLine();
@@ -302,7 +287,7 @@ void getChar()
 
 void moveUp()
 {
-	while (isSep(currChar))
+	while (isSep(currChar) && currChar != EOF)
 	{
 		getChar();
 	}
@@ -1433,7 +1418,14 @@ void Module ()
 
 	expect(END_SYM);
 	expect(ident);
-	expect(period);	
+	if( currTok != period )
+	{
+		fputs("Unexpexted token ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs(". ", stdout);
+		fputs(symNames[period][0], stdout);
+		fputs(" expected\n", stdout);
+	}	
 
 	fputs("Reached the end of Module", stdout);
 }
