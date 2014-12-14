@@ -7,7 +7,7 @@
 #include <stdio.h>		// need for file io
 #include <string.h>
 #include "scanner.h"
-// this token stuff might have to be ... simpler? like: letter, colon, SEMIColon, etc. -- yes
+
 typedef enum { 								// OBERON 2, not OBERON S 
 				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, notEqual, comma, period,
 				ident, resWord, number, string, 
@@ -458,6 +458,7 @@ void scanIdent()
 
 	if (resIndex != -1)
 	{
+		fputs("Scanning ident\n", stdout);
 		currTok = resWordTokens[resIndex];
 	}
 	else
@@ -494,6 +495,8 @@ void scanString()
 
 void writeSym()
 {
+	printf("%d", lineNo);
+	fputs(": ", stdout);
 	fputs("[", stdout);
 	fputs(symNames[currTok][0], stdout);
 	
@@ -612,86 +615,86 @@ void initScanner()
 	resWords [0][0] = "BOOLEAN";
 	resWords [1][0] = "CHAR";
 	resWords [2][0] = "FALSE";
-	resWords [3][0] = "INTEGER";
-	resWords [4][0] = "NEW";
-	resWords [5][0] = "REAL";
-	resWords [6][0] = "TRUE";
-	resWords [7][0] = "ARRAY";
-	resWords [8][0] = "BEGIN";
-	resWords [9][0] = "BY";
-	resWords [10][0] = "CASE";
-	resWords [11][0] = "CONST";
-	resWords [12][0] = "DIV";
-	resWords [13][0] = "DO";
-	resWords [14][0] = "ELSE";
-	resWords [15][0] = "ELSIF";
-	resWords [16][0] = "END";
-	resWords [17][0] = "EXIT";
-	resWords [18][0] = "FOR";
-	resWords [19][0] = "IF";
-	resWords [20][0] = "IMPORT";
-	resWords [21][0] = "IN";
-	resWords [22][0] = "IS";
-	resWords [23][0] = "LOOP";
-	resWords [24][0] = "MOD";
-	resWords [25][0] = "MODULE";
-	resWords [26][0] = "NIL";
-	resWords [27][0] = "OF";
-	resWords [28][0] = "OR";
-	resWords [29][0] = "POINTER";
-	resWords [30][0] = "PRODECURE";
-	resWords [31][0] = "RECORD";
-	resWords [32][0] = "REPEAT";
-	resWords [33][0] = "RETURN";
-	resWords [34][0] = "THEN";
-	resWords [35][0] = "TO";
-	resWords [36][0] = "TYPE";
-	resWords [37][0] = "UNTIL";
-	resWords [38][0] = "VAR";
-	resWords [39][0] = "WHILE";
-	resWords [40][0] = "WITH";
+	resWords [3][0] = "NEW";
+	resWords [4][0] = "REAL";
+	resWords [5][0] = "TRUE";
+	resWords [6][0] = "ARRAY";
+	resWords [7][0] = "BEGIN";
+	resWords [8][0] = "BY";
+	resWords [9][0] = "CASE";
+	resWords [10][0] = "CONST";
+	resWords [11][0] = "DIV";
+	resWords [12][0] = "DO";
+	resWords [13][0] = "ELSE";
+	resWords [14][0] = "ELSIF";
+	resWords [15][0] = "END";
+	resWords [16][0] = "EXIT";
+	resWords [17][0] = "FOR";
+	resWords [18][0] = "IF";
+	resWords [19][0] = "IMPORT";
+	resWords [20][0] = "IN";
+	resWords [21][0] = "IS";
+	resWords [22][0] = "LOOP";
+	resWords [23][0] = "MOD";
+	resWords [24][0] = "MODULE";
+	resWords [25][0] = "NIL";
+	resWords [26][0] = "OF";
+	resWords [27][0] = "OR";
+	resWords [28][0] = "POINTER";
+	resWords [29][0] = "PRODECURE";
+	resWords [30][0] = "RECORD";
+	resWords [31][0] = "REPEAT";
+	resWords [32][0] = "RETURN";
+	resWords [33][0] = "THEN";
+	resWords [34][0] = "TO";
+	resWords [35][0] = "TYPE";
+	resWords [36][0] = "UNTIL";
+	resWords [37][0] = "VAR";
+	resWords [38][0] = "WHILE";
+	resWords [39][0] = "WITH";
+	resWords [40][0] = "INTEGER";
 
 	resWordTokens [0] = BOOLEAN_SYM;
 	resWordTokens [1] = CHAR_SYM;
 	resWordTokens [2] = FALSE_SYM;
-	resWordTokens [3] = INTEGER_SYM;
-	resWordTokens [4] = NEW_SYM;
-	resWordTokens [5] = REAL_SYM;
-	resWordTokens [6] = TRUE_SYM;
-	resWordTokens [7] = ARRAY_SYM;
-	resWordTokens [8] = BEGIN_SYM;
-	resWordTokens [9] = BY_SYM;
-	resWordTokens [10] = CASE_SYM;
-	resWordTokens [11] = CONST_SYM;
-	resWordTokens [12] = DIV_SYM;
-	resWordTokens [13] = DO_SYM;
-	resWordTokens [14] = ELSE_SYM;
-	resWordTokens [15] = ELSIF_SYM;
-	resWordTokens [16] = END_SYM;
-	resWordTokens [17] = EXIT_SYM;
-	resWordTokens [18] = FOR_SYM;
-	resWordTokens [19] = IF_SYM;
-	resWordTokens [20] = IMPORT_SYM;
-	resWordTokens [21] = IN_SYM;
-	resWordTokens [22] = IS_SYM;
-	resWordTokens [23] = LOOP_SYM;
-	resWordTokens [24] = MOD_SYM;
-	resWordTokens [25] = MODULE_SYM;
-	resWordTokens [26] = NIL_SYM;
-	resWordTokens [27] = OF_SYM;
-	resWordTokens [28] = OR_SYM;
-	resWordTokens [29] = POINTER_SYM;
-	resWordTokens [30] = PROCEDURE_SYM;
-	resWordTokens [31] = RECORD_SYM;
-	resWordTokens [32] = REPEAT_SYM;
-	resWordTokens [33] = RETURN_SYM;
-	resWordTokens [34] = THEN_SYM;
-	resWordTokens [35] = TO_SYM;
-	resWordTokens [36] = TYPE_SYM;
-	resWordTokens [37] = UNTIL_SYM;
-	resWordTokens [38] = VAR_SYM;
-	resWordTokens [39] = WHILE_SYM;
-	resWordTokens [40] = WITH_SYM;
+	resWordTokens [3] = NEW_SYM;
+	resWordTokens [4] = REAL_SYM;
+	resWordTokens [5] = TRUE_SYM;
+	resWordTokens [6] = ARRAY_SYM;
+	resWordTokens [7] = BEGIN_SYM;
+	resWordTokens [8] = BY_SYM;
+	resWordTokens [9] = CASE_SYM;
+	resWordTokens [10] = CONST_SYM;
+	resWordTokens [11] = DIV_SYM;
+	resWordTokens [12] = DO_SYM;
+	resWordTokens [13] = ELSE_SYM;
+	resWordTokens [14] = ELSIF_SYM;
+	resWordTokens [15] = END_SYM;
+	resWordTokens [16] = EXIT_SYM;
+	resWordTokens [17] = FOR_SYM;
+	resWordTokens [18] = IF_SYM;
+	resWordTokens [19] = IMPORT_SYM;
+	resWordTokens [20] = IN_SYM;
+	resWordTokens [21] = IS_SYM;
+	resWordTokens [22] = LOOP_SYM;
+	resWordTokens [23] = MOD_SYM;
+	resWordTokens [24] = MODULE_SYM;
+	resWordTokens [25] = NIL_SYM;
+	resWordTokens [26] = OF_SYM;
+	resWordTokens [27] = OR_SYM;
+	resWordTokens [28] = POINTER_SYM;
+	resWordTokens [29] = PROCEDURE_SYM;
+	resWordTokens [30] = RECORD_SYM;
+	resWordTokens [31] = REPEAT_SYM;
+	resWordTokens [32] = RETURN_SYM;
+	resWordTokens [33] = THEN_SYM;
+	resWordTokens [34] = TO_SYM;
+	resWordTokens [35] = TYPE_SYM;
+	resWordTokens [36] = UNTIL_SYM;
+	resWordTokens [37] = VAR_SYM;
+	resWordTokens [38] = WHILE_SYM;
+	resWordTokens [39] = WITH_SYM;
+	resWordTokens [40] = INTEGER_SYM;
 
 }
 
@@ -879,12 +882,13 @@ void qualident()
 
 void type ()
 {
-	//lookahead, if ident, qual, 
-	//if rec, arr, poi, proc struct
-	//qualident();
-	//StrucType();
-	fputs("This is type\n", stdout);
-	nextSym();
+	fputs("This is type\n", stdout); 
+	
+	if ( currTok == ident )
+		qualident();
+	else if ( currTok == RECORD_SYM | currTok == ARRAY_SYM | currTok == POINTER_SYM | currTok == PROCEDURE_SYM )  
+		StrucType();
+	
 }
 
 void expr ()
@@ -1390,14 +1394,11 @@ void DeclSeq ()
 
 	}
 
-	else if (currTok == PROCEDURE_SYM)
+	while (currTok == PROCEDURE_SYM)
 	{
-		do
-		{
 			nextSym();
 			ProcDecl();
-			expect(SEMIC);	
-		} while(currTok == PROCEDURE_SYM);
+			expect(SEMIC);
 	}
 
 	fputs("End of DeclSeq\n", stdout);
