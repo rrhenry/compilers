@@ -1,8 +1,11 @@
 //  Oberon Sparser
-//_specialization.jetAlexi Turcotte
-//_specialization.jetRoxanne Henry
+//  Alexi Turcotte
+//  Roxanne Henry
 
-
+/*			TODO LIST
+		-> phase out need for <string.h>
+		-> make fatal errors fatal
+*/
 
 #include <stdio.h>		// need for file io
 #include <string.h>
@@ -81,6 +84,149 @@ Token setTok;
 //int eofParsed = 0;
 
 FILE *toScan;
+
+/* Code Generator Data Fields */
+
+int currlev = 0;
+int lc = 0;
+int stptr = 0;
+const int maxlev = 10;
+const int stsize = 256;		// length of symbol table
+const int ttsize = 128;  	// length of type table
+const int codemax = 1023;   // length of code array
+
+typedef enum 				// classes of identifiers
+{
+	funccls
+	,paramcls
+	,typcls
+	,varcls
+	,constcls
+	,proccls
+} IdClass;
+
+typedef enum				// types of types
+{
+	arrayfrm
+	,recrodfrm
+	,ptrfrm
+	,procfrm
+} TypeForm;
+
+typedef enum				// all possible opcodes
+{
+	opr
+	,push
+	,pshc
+	,psha
+	,pshi
+	,pop
+	,popi
+	,isp
+	,jmp
+	,jmpc
+	,jsr
+	,jmpx
+	,for0
+	,for1
+	,selc
+	,nop
+} Opcode;
+
+struct vminstr
+{
+	Opcode op;				// opcode
+	int ld;					// static level difference
+	int ad;					// offset from beginning of stack frame
+};
+
+struct typerec
+{
+	int size;				// memory footprint
+	TypeForm type;			// type type
+};
+
+struct identrec 			// ident struct
+{
+	char *name [32];
+	int previd;
+	int idlev;
+	int idtyp;
+	IdClass class;
+	// TODO: need to store class information
+};
+
+struct identrec symtab [256];  	// symbol table
+struct typerec typetab [128];		// type table
+struct vminstr code    [1023];		// generated code
+int scopetab [10];					// scope table
+
+/* End Code Gen Data Fields */
+
+/* BEGIN: Code gen methods */
+
+void enterScope()
+{
+	if ( currlev < maxlev )
+	{	
+		currlev ++;
+		scopetab[ currlev] = 0;
+	}
+	else
+	{
+		fputs("F_ERROR: Maximum nesting level exceeded.", stdout);
+	}
+}
+
+void exitScope()
+{
+	currlev --;
+}
+
+void genCode( Opcode o, int l, int a)
+{
+	if ( lc > codemax)
+	{
+		fputs("F_ERROR: Code too large.", stdout);
+	}
+	else
+	{
+		code[ lc].op = o;
+		code[ lc].ld = l;
+		code[ lc].ad = a;
+		lc ++;
+	}
+}
+
+void enterstdident ( char id [], IdClass cls, int ttp)
+{
+	stptr ++;
+//	symtab[ stptr].name = id;
+	symtab[ stptr].previd = scopetab[ currlev];
+	symtab[ stptr].idlev = currlev;
+	symtab[ stptr].idtyp = ttp;
+	symtab[ stptr].class = cls;
+	scopetab[ currlev] = stptr;
+}
+
+void searchid( char id [32])
+{
+//	int stp = stptr;			// local symbol table ptr
+//	int lev = 0;				// local var for level
+//	symtab[ 0].name = id;		// sentinel for search
+
+//	lev = currlev;				// start searching at the current scope level
+//	do
+//	{
+//		stp = scopetab[ lev];
+//		while ( strcmp(symtab[ stp].name, id) != 0)
+//		{
+//			stp = symtab[ stp].previd;
+//		}
+//	}
+}
+
+/* END:   Code gen methods */
 
 void writeSym();
 
