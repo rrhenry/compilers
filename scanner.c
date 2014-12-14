@@ -50,7 +50,7 @@ typedef enum { 								// OBERON 2, not OBERON S
 			    BOOLEAN_SYM,
 			    CHAR_SYM,
 			    FALSE_SYM,
-			    INTEGER_SYM,
+			    //INTEGER_SYM,
 			    NEW_SYM,
 			    REAL_SYM,
 			    TRUE_SYM
@@ -60,7 +60,7 @@ const char *resWords [41][64];
 const char *symNames [127][64];
 Token resWordTokens [127];
 Token specialSymbols [127];
-const int RESWORD_SIZE = 41;
+const int RESWORD_SIZE = 40;
 
 Token currTok;
 const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
@@ -458,7 +458,7 @@ void scanIdent()
 
 	if (resIndex != -1)
 	{
-		fputs("Scanning ident\n", stdout);
+		//fputs("Scanning ident\n", stdout);
 		currTok = resWordTokens[resIndex];
 	}
 	else
@@ -652,7 +652,7 @@ void initScanner()
 	resWords [37][0] = "VAR";
 	resWords [38][0] = "WHILE";
 	resWords [39][0] = "WITH";
-	resWords [40][0] = "INTEGER";
+//	resWords [40][0] = "INTEGER";
 
 	resWordTokens [0] = BOOLEAN_SYM;
 	resWordTokens [1] = CHAR_SYM;
@@ -694,7 +694,7 @@ void initScanner()
 	resWordTokens [37] = VAR_SYM;
 	resWordTokens [38] = WHILE_SYM;
 	resWordTokens [39] = WITH_SYM;
-	resWordTokens [40] = INTEGER_SYM;
+//	resWordTokens [40] = INTEGER_SYM;
 
 }
 
@@ -773,7 +773,7 @@ void initSymNames()
 	 symNames[    BOOLEAN_SYM][0] = "BOOLEAN_SYM";
 	 symNames[    CHAR_SYM][0] = "CHAR_SYM";
 	 symNames[    FALSE_SYM][0] = "FALSE_SYM";
-	 symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
+	// symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
 	 symNames[    NEW_SYM][0] = "NEW_SYM";
 	 symNames[    REAL_SYM][0] = "REAL_SYM";
 	 symNames[    TRUE_SYM][0] = "TRUE_SYM";
