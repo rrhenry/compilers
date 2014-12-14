@@ -641,7 +641,7 @@ void initScanner()
 	resWords [26][0] = "OF";
 	resWords [27][0] = "OR";
 	resWords [28][0] = "POINTER";
-	resWords [29][0] = "PRODECURE";
+	resWords [29][0] = "PROCEDURE";
 	resWords [30][0] = "RECORD";
 	resWords [31][0] = "REPEAT";
 	resWords [32][0] = "RETURN";
@@ -978,7 +978,7 @@ void factor()
 	}
 	else if ( currTok == ident )
 	{
-		ActParams();
+		designator();
 	}
 	else if ( currTok == lparen )
 	{
@@ -1179,6 +1179,7 @@ void stat ()
 	// WHILESTAT
 	else if ( currTok == WHILE_SYM )
 	{
+		fputs("This is whileSYM\n", stdout);
 		nextSym();
 		WhileStat();
 		
@@ -1209,8 +1210,9 @@ void FormParams ()
 		}
 
 		expect(colon);
-		expect(ARRAY_SYM);
-		expect(OF_SYM);
+		
+		if ( currTok == ARRAY_SYM )
+			expect(OF_SYM);
 		qualident();
 		//nextSym();
 
@@ -1388,12 +1390,14 @@ void DeclSeq ()
 				expect(colon);
 
 			}
+			fputs("ABOUT TO TYPE IN VAR\n", stdout);
 			type();
 			expect(SEMIC);
+			fputs("THIS SHOULD BE END OF VAR\n", stdout);
 		}
 
 	}
-
+	fputs("JUST BEFORE PROC SYM\n", stdout);
 	while (currTok == PROCEDURE_SYM)
 	{
 			nextSym();
