@@ -862,7 +862,7 @@ void qualident()
 		expect(ident);
 	}
 	while(currTok == period);
-	
+	fputs("Done qualident.\n", stdout);
 }
 
 void type ()
@@ -873,7 +873,7 @@ void type ()
 		qualident();
 	else if ( currTok == RECORD_SYM | currTok == ARRAY_SYM | currTok == POINTER_SYM | currTok == PROCEDURE_SYM )  
 		StrucType();
-	
+	fputs("Done type\n", stdout);
 }
 
 void expr ()
@@ -884,7 +884,7 @@ void expr ()
 		nextSym();
 	}
 	term();
-	while ( currTok == plus | currTok == minus | OR_SYM)
+	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
 		nextSym();
 	}
@@ -900,7 +900,7 @@ void ActParams ()
 		expr();
 	}while ( currTok == comma );
 	expect(rparen);
-	
+	fputs("Done ActParams\n", stdout);
 }
 
 void designator ()
@@ -934,10 +934,12 @@ void designator ()
 		}
 		
 	}
+	fputs("Done designator\n", stdout);
 }
 
 void set()
 {
+	fputs("This is set\n", stdout);
 	do
 	{
 		expr();
@@ -952,11 +954,12 @@ void set()
 	}while ( currTok == comma ); 
 
 	expect(rcurly);
-	
+	fputs("Done set\n", stdout);
 }
 
 void factor()
 {
+	fputs("This is factor\n", stdout);
 	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM )
 	{
 		nextSym();
@@ -977,16 +980,18 @@ void factor()
 	{
 		set();
 	}
-	
+	fputs("Done factor\n", stdout);
 }
 
 void term()
 {
+	fputs("This is term \n", stdout);
 	factor();
 	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
 	{
 		factor();
 	}
+	fputs("Done term\n", stdout);
 }
 
 void StatSeq ()
@@ -1006,13 +1011,16 @@ void AssignStat ()
 {
 	fputs("This is AssignStat\n", stdout);
 	expr();
+	fputs("Done AssignStat\n", stdout);
 }
 
 void RepeatStat ()
 {
+	fputs("Start RepeatStat \n", stdout);
 	StatSeq();
 	expect(UNTIL_SYM);
 	expr();
+	fputs("Done RepeatStat\n", stdout);
 }
 
 /*
@@ -1042,6 +1050,7 @@ void IfStat()
 		StatSeq();
 	}
 	expect(END_SYM);
+	fputs("Done IfStat\n", stdout);
 }
 
 void caseP ()
@@ -1088,10 +1097,12 @@ void CaseStat ()
 		caseP();
 	}
 	expect(END_SYM);
+	fputs("Done CaseStat\n", stdout);
 }
 
 void WhileStat()
 {
+	fputs("Start WhileStat \n", stdout);
 	expr();
 	expect(DO_SYM);
 	StatSeq();
@@ -1103,10 +1114,12 @@ void WhileStat()
 		StatSeq();
 	}
 	expect(END_SYM);
+	fputs("Done WhileStat\n", stdout);
 }
 
 void ForStat()
 {
+	fputs("Start ForStat\n", stdout);
 	expect(ident);
 	expect(assign);
 	expr();
@@ -1120,6 +1133,7 @@ void ForStat()
 	expect(DO_SYM);
 	StatSeq();
 	expect(END_SYM);
+	fputs("Done ForStat\n", stdout);
 }
 
 void stat ()
@@ -1175,7 +1189,7 @@ void stat ()
 		nextSym();
 		ForStat();
 	}
-
+	fputs("Done stat\n", stdout);
 }
 
 void FormParams ()
@@ -1295,11 +1309,12 @@ void StrucType ()
 			nextSym();
 			FormParams();
 	}
-
+	fputs("Done StrucType\n", stdout);
 }
 
 void ProcDecl ()
 {
+	fputs("Start ProcDecl\n", stdout);
 	expect(ident);
 	if(currTok == mul)
 		nextSym();
@@ -1325,7 +1340,7 @@ void ProcDecl ()
 	}
 	expect(END_SYM);
 	expect(ident);
-	
+	fputs("Done ProcDecl\n", stdout);
 }
 
 void DeclSeq ()
@@ -1395,6 +1410,7 @@ void DeclSeq ()
 
 void Module ()
 {
+	fputs("Enter Module \n", stdout);
 	nextSym();
 	expect(MODULE_SYM);
 	expect(ident);
