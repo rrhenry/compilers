@@ -193,6 +193,8 @@ int scopetab [10];					// scope table
 /* BEGIN: Code gen methods */
 
 void enterstdtypes();
+void printsymtab();
+void printtyptab();
 
 void enterScope()
 {
@@ -313,8 +315,6 @@ void initstdmnemonics()
 
 void initstdidents()
 {
-	enterstdtypes();
-
 	int nstdidents = 24;
 	char *stdidents [24][16];
 	stdidents[  0][ 0] = "ABS            ";
@@ -383,9 +383,37 @@ void enterstdtypes()
 	typetab[ ttptr].form = scalarfrm;
 }
 
+void printsymtab()
+{
+	printf("\n");
+	printf("      name             level   type  previd\n");		// TOADD addr  
+
+	int i;
+	for ( i = 1; i < stptr; i++)
+	{
+		printf("%4d:%16s %6d %6d %7d\n", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
+	}
+}
+
+void printtyptab()
+{
+	printf("\n");
+	printf("       size  lastfld \n");
+
+	int i;
+	for ( i = 1; i < ttptr; i++)
+	{
+		printf("%4d:%6d %8d\n", i, typetab[ i].size, typetab[ i].form);
+	}
+}
+
 void initcompile()
 {
 	enterstdtypes();
+	initstdidents();
+	initstdmnemonics();
+	printsymtab();
+	printtyptab();
 }
 
 //* END:   Subset of Code Gen methods -- compiler initialization *//
@@ -1111,6 +1139,7 @@ void scan()
 	initScanner();
 	initSymNames();
 	initSpecialSyms();
+	initcompile();
 
 	fputs("\nScanning ... Begin.\n\n", stdout);
 	getChar();
