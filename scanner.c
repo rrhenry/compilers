@@ -1182,11 +1182,20 @@ void expect (Token t)
 {
 	if (currTok != t)
 	{
-		fputs("Unexpexted token ", stdout);
+		fputs("\nln: ", stdout);
+		printf("%d", lineNo);
+		fputs("  ERROR: Unexpexted token ", stdout);
 		fputs(symNames[currTok][0], stdout);
 		fputs(". ", stdout);
 		fputs(symNames[t][0], stdout);
-		fputs(" expected\n", stdout);
+		fputs(" expected\n\n", stdout);
+		
+		fputs(currLine, stdout);
+		
+		for(int i = 0; i < inptr-2; i++)
+			fputc('-', stdout);
+		fputs("^\n\n", stdout);
+		
 		
 	}
 
@@ -1196,11 +1205,13 @@ void expect (Token t)
 void qualident()
 {
 	fputs("This is a qualident\n", stdout);
-	do
+	expect(ident);
+	if(currTok == period)
 	{
+		nextSym();
 		expect(ident);
 	}
-	while(currTok == period);
+	
 	fputs("Done qualident.\n", stdout);
 }
 
@@ -1215,9 +1226,8 @@ void type ()
 	fputs("Done type\n", stdout);
 }
 
-void expr ()
+void SimplExpr ()
 {
-	fputs("This is expr\n", stdout);
 	if ( currTok == plus | currTok == minus )
 	{
 		nextSym();
@@ -1228,16 +1238,30 @@ void expr ()
 		nextSym();
 	}
 	term();
+}
+
+void expr ()
+{
+	fputs("This is expr\n", stdout);
+	SimplExpr();
 	fputs("Done expr\n", stdout);
+	if( currTok == equal | currTok == notEqual | currTok == lt | currTok == lte | currTok == gt | currTok == gte | currTok == IN_SYM | currTok == IS_SYM )
+	{
+		nextSym();
+		SimplExpr();
+	}
 }
 
 void ActParams ()
 {
 	fputs("This is ActParams\n", stdout);
-	do
+	expr();
+	fputs("HERE?\n", stdout);
+	while ( currTok == comma )
 	{
+		nextSym();
 		expr();
-	}while ( currTok == comma );
+	}
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
 }
@@ -1246,7 +1270,7 @@ void designator ()
 {
 	fputs("This is designator\n", stdout);
 	qualident();
-	while ( currTok == period | currTok == lbrac | currTok == hat | currTok == lparen ) 
+	while ( currTok == period | currTok == lbrac | currTok == hat ) 
 	{
 		if ( currTok == period)
 		{
@@ -1256,21 +1280,24 @@ void designator ()
 			 
 		else if ( currTok ==  lbrac )
 		{
-			do
+			nextSym();
+			expr();
+			while( currTok == comma )
 			{
 				nextSym();
 				expr();
-			}while( currTok == comma );
+			}
 			expect(rbrac); 
 		}
 		else if ( currTok == hat )
 			nextSym();
-		else if ( currTok == lparen )
+		/*else if ( currTok == lparen )
 		{
+			fputs("Am I here?\n", stdout);
 			nextSym();
 			qualident();
 			expect(rparen);
-		}
+		}*/
 		
 	}
 	fputs("Done designator\n", stdout);
@@ -1386,6 +1413,7 @@ void IfStat()
 	}
 	if ( currTok == ELSE_SYM )
 	{
+		nextSym();
 		StatSeq();
 	}
 	expect(END_SYM);
@@ -1493,7 +1521,7 @@ void stat ()
 			nextSym();
 			AssignStat();
 		}
-		else if( currTok == lparen)
+		else if( currTok == lparen )
 		{
 			nextSym();
 			ActParams();
@@ -1729,14 +1757,11 @@ void DeclSeq ()
 				expect(colon);
 
 			}
-			fputs("ABOUT TO TYPE IN VAR\n", stdout);
 			type();
 			expect(SEMIC);
-			fputs("THIS SHOULD BE END OF VAR\n", stdout);
 		}
 
 	}
-	fputs("JUST BEFORE PROC SYM\n", stdout);
 	while (currTok == PROCEDURE_SYM)
 	{
 			nextSym();
@@ -1775,11 +1800,19 @@ void Module ()
 	expect(ident);
 	if( currTok != period )
 	{
-		fputs("Unexpexted token ", stdout);
+		fputs("\nln: ", stdout);
+		printf("%d", lineNo);
+		fputs("  ERROR: Unexpexted token ", stdout);
 		fputs(symNames[currTok][0], stdout);
 		fputs(". ", stdout);
 		fputs(symNames[period][0], stdout);
-		fputs(" expected\n", stdout);
+		fputs(" expected\n\n", stdout);
+		
+		fputs(currLine, stdout);
+		
+		for(int i = 0; i < inptr-2; i++)
+			fputc('-', stdout);
+		fputs("^\n\n", stdout);
 	}	
 
 	fputs("Reached the end of Module", stdout);
