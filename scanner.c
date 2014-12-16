@@ -1237,8 +1237,9 @@ void SimplExpr ()
 	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
 		nextSym();
+		term();
 	}
-	term();
+
 }
 
 void expr ()
