@@ -1192,7 +1192,8 @@ void expect (Token t)
 		
 		fputs(currLine, stdout);
 		
-		for(int i = 0; i < inptr-2; i++)
+		int i;
+		for( i = 0; i < inptr-2; i++)
 			fputc('-', stdout);
 		fputs("^\n\n", stdout);
 		
@@ -1813,7 +1814,8 @@ void Module ()
 		
 		fputs(currLine, stdout);
 		
-		for(int i = 0; i < inptr-2; i++)
+		int i;
+		for(i = 0; i < inptr-2; i++)
 			fputc('-', stdout);
 		fputs("^\n\n", stdout);
 	}	
