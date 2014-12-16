@@ -1333,11 +1333,14 @@ void factor()
 	else if ( currTok == ident )
 	{
 		designator();
+		if( currTok == lparen)
+			ActParams();
 	}
 	else if ( currTok == lparen )
 	{
 		nextSym();
 		expr();
+		expect(rparen);
 	}
 	else if ( currTok == tilde )
 	{
