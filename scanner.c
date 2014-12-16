@@ -1336,14 +1336,17 @@ void factor()
 	}
 	else if ( currTok == lparen )
 	{
+		nextSym();
 		expr();
 	}
 	else if ( currTok == tilde )
 	{
+		nextSym();
 		factor();
 	}
 	else if ( currTok == lcurly )
 	{
+		nextSym();
 		set();
 	}
 	fputs("Done factor\n", stdout);
