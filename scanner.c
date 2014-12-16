@@ -1334,14 +1334,20 @@ void factor()
 	}
 	else if ( currTok == ident )
 	{
+		fputs("Why not here??\n", stdout);
 		designator();
 		if( currTok == lparen)
-			ActParams();
+		{
+			nextSym();
+			ActParams();	
+		}
+	
 	}
 	else if ( currTok == lparen )
 	{
 		nextSym();
 		expr();
+		fputs("Here... \n", stdout);
 		expect(rparen);
 	}
 	else if ( currTok == tilde )
