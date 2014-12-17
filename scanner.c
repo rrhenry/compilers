@@ -294,7 +294,7 @@ void exitScope()
 	currlev --;
 }
 
-void genCode( Opcode o, int l, int a)
+void gencode( Opcode o, int l, int a)
 {
 	if ( lc > codemax)
 	{
@@ -1346,7 +1346,7 @@ void SimplExpr ( int* ttp)
 		checktypes( *ttp, inttyp);
 		if (addop == minus)
 		{
-			genCode( opr, 0, 2);
+			gencode( opr, 0, 2);
 		}
 	}
 	term( ttp);
@@ -1511,6 +1511,25 @@ void AssignStat (int stp)
 	fputs("This is AssignStat\n", stdout);
 	int ttp;
 	expr( &ttp);
+
+	checktypes(symtab[ stp].idtyp, ttp);
+	switch (symtab[ stp].class)
+	{
+		case varcls:
+			gencode(pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+			break;
+		case paramcls:
+			if ( paramcls == symtab[ stp].classData.pa.varparam)
+			{
+				gencode( popi, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+			}
+			else
+			{
+				gencode( pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+			}
+			break;
+	}
+
 	fputs("Done AssignStat\n", stdout);
 }
 
@@ -1533,25 +1552,36 @@ void ProcCall ()
 
 void IfStat( int displ)
 {
-	int ttp;
+	int ttp, savlc1, savlc2;
 	fputs("This is IfStat\n", stdout);
 	expr( &ttp);
+	checktypes( ttp, booltyp);
 	expect(THEN_SYM);
+	savlc1 = lc;
 	StatSeq( displ);
-	
+	savlc2 = lc;
+	gencode( jmp, 0, 0);
+	code[ savlc1].ad = lc;
+
 	while ( currTok ==  ELSIF_SYM)
-	{
+	{									// ignored for code gen at this time
 		nextSym();
 		expr( &ttp);
-		nextSym();
+		//checktypes( ttp, booltyp);
+		nextSym();						// ??
 		expect(THEN_SYM);
+		//savlc1 = lc;
 		StatSeq( displ);
+										// could be broken
+		//code[ savlc1].ad = lc;
 	}
 	if ( currTok == ELSE_SYM )
 	{
 		nextSym();
 		StatSeq( displ);
 	}
+
+	code [ savlc2].ad = lc;
 	expect(END_SYM);
 	fputs("Done IfStat\n", stdout);
 }
@@ -1994,7 +2024,7 @@ void Module ()
 	int displ = 1;							// initialize displacement
 	int savstptr = stptr;					// save entry point
 	int savlc = lc;
-	genCode( jmp, 0, 0);
+	gencode( jmp, 0, 0);
 
 	if(currTok == IMPORT_SYM)
 	{
