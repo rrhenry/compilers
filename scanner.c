@@ -3,12 +3,10 @@
 //  Roxanne Henry
 
 /*			TODO LIST
-		-> phase out need for <string.h>
 		-> make fatal errors fatal (i.e. ctrl-find F_ERROR and add exit statement)
 */
 
 #include <stdio.h>		// need for file io
-#include <string.h>
 #include "scanner.h"
 
 typedef enum { 								// OBERON 2, not OBERON S 
@@ -97,6 +95,18 @@ char *strcopy(char *dst, const char *src)
    *dst = 0;
    return saved;
 }
+	
+int strcmpis( const char *s1, const char *s2)	// str cmp ignore space
+{
+	while (*s1 && *s2)				// while the null character is not reached
+	{
+		if (*s1++ != *s2++)			// if they are not equal
+		{
+			return -1;
+		}
+	}
+	return 0;
+}
 
 /* END:   String processing methods */
 
@@ -180,6 +190,7 @@ struct identrec 			// ident struct
 	int idlev;				// static level of the ident decl
 	int idtyp;				// type of the ident
 	IdClass class;			// class of the ident (i.e. ref to class table)
+	int varaddr;
 	// TODO: need to store class information
 };
 
@@ -240,28 +251,31 @@ void enterstdident ( char id [], IdClass cls, int ttp)
 	scopetab[ currlev] = stptr;
 }
 
-int searchid( char id [16])
+void searchid( char id [16], int* stp)
 {
-	int stp = stptr;				// local symbol table ptr
 	int lev = 0;					// local var for level
 	strcopy(symtab[ 0].name, id);	// sentinel for search
 
 	lev = currlev;					// start searching at the current scope level
 	do
 	{
-		stp = scopetab[ lev];
-		printf("%d: stp\n", stp);
-		while ( strcmp(symtab[ stp].name, id) != 0)
+		*stp = scopetab[ lev];
+
+		while ( strcmpis(symtab[ *stp].name, id) != 0)
 		{
-			stp = symtab[ stp].previd;
+			printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
+			*stp = symtab[ *stp].previd;
+			// if( strcmp(symtab[ *stp].name, id) == 0)
+			// {
+			// 	printf("\n\nstp: %d Success with %s vs %s\n", *stp, symtab[ *stp].name, id);
+			// }
 		}
 		lev --;
-	} while (stp == 0 && lev >= 0);
+	} while (*stp == 0 && lev >= 0);
 
-	if (stp == 0)
+	if (*stp == 0)
 		printf("ERROR: 42 Undeclared identifier: %s\n", id);
 
-	return stp;
 }
 
 void insertid( char id [16], IdClass cls)
@@ -431,6 +445,11 @@ void initcompile()
 /* END:   Code gen methods */
 
 void writeSym();
+
+void error (int e)
+{
+	printf("ERROR %d\n", e);
+}
 
 int isDigit(char aChar)
 {
@@ -1226,14 +1245,26 @@ void qualident()
 	fputs("Done qualident.\n", stdout);
 }
 
-void type ( int ttp)
+void type ( int* ttp)
 {
 	fputs("This is type\n", stdout); 
 	
+	int stp = stptr;
+
 	if ( currTok == ident )
+	{
+		searchid( currWord, &stp);			// check to see if ident is a type
+		if (symtab[ stp].class != typcls)	// ^
+		{
+			error( 41);						// error message 41
+		}
+		*ttp = symtab[ stp].idtyp;
 		qualident();
+	}
 	else if ( currTok == RECORD_SYM | currTok == ARRAY_SYM | currTok == POINTER_SYM | currTok == PROCEDURE_SYM )  
-		StrucType( ttp);
+	{
+		StrucType( *ttp);
+	}
 	fputs("Done type\n", stdout);
 }
 
@@ -1554,7 +1585,7 @@ void stat ()
 	// ASSIGNSTAT or PROC CALL
 	else if ( currTok == ident )
 	{
-		int stp = searchid(currWord);
+		searchid(currWord, &stptr);
 		designator();
 
 		if( currTok == assign)
@@ -1663,7 +1694,7 @@ void StrucType ()
 {
 	fputs("This is StrucType\n", stdout);
 	int ttp;
-	if(currTok == RECORD_SYM)
+	if(currTok == RECORD_SYM)				/* TODO: This has to change to be good I think? */
 	{
 		nextSym();
 		enterScope();
@@ -1688,7 +1719,7 @@ void StrucType ()
 					nextSym();
 			}
 			expect(colon);
-			type( ttp);
+			type( &ttp);
 		}while(currTok == SEMIC);
 		
 		exitScope();
@@ -1704,13 +1735,13 @@ void StrucType ()
 		}while(currTok == comma);
 
 		expect(OF_SYM);
-		type( ttp);
+		type( &ttp);
 	}
 	else if(currTok == POINTER_SYM)
 	{
 		nextSym();
 		expect(TO_SYM);
-		type( ttp);
+		type( &ttp);
 	}
 	else if(currTok == PROCEDURE_SYM)
 	{
@@ -1760,6 +1791,25 @@ void ProcDecl ()
 	fputs("Done ProcDecl\n", stdout);
 }
 
+void identList()
+{	/* identList -> identdef { , identdef } 
+	   identdef  -> ident [ * ] 				*/
+	expect( ident);
+	if ( currTok == mul)
+	{
+		nextSym();
+	}
+
+	while ( currTok == comma)
+	{
+		expect( ident);
+		if ( currTok == mul)
+		{
+			nextSym();
+		}
+	}
+}
+
 void DeclSeq ()
 {
 	fputs("This is DeclSeq\n", stdout);
@@ -1793,34 +1843,63 @@ void DeclSeq ()
 	}
 	else if (currTok == VAR_SYM)	/* VarDecl */
 	{
+		int stpv1, stpv2, ttpV;
+		
 		nextSym();
-		while(currTok == ident)
+
+		/* identList */
+
+		if ( currTok == ident)
 		{
-			int ttpV;
 			insertid( currWord, varcls);
 			printsymtab();
+			stpv1 = stptr;					// save ptr to first entry
+			nextSym();		
+		}
+		else
+		{
+			printf("ERROR 4: ?????\n");
+		}
+
+		if ( currTok == mul)
+		{
 			nextSym();
-			if(currTok == mul)
+		}
+
+		while ( currTok == comma)
+		{
+			nextSym();
+			if ( currTok == ident)
+			{
+				insertid( currWord, varcls);
+				printsymtab();
 				nextSym();
-			if(currTok == comma)
+			}
+			else
+			{
+				printf("ERROR 4: ?????\n");
+			}
+			if ( currTok == mul)
 			{
 				nextSym();
-				
-				if (currTok == ident)
-				{
-					insertid(currWord, varcls);
-					printsymtab();
-					nextSym();
-				}
-
-				if(currTok == mul)
-					nextSym();
-				expect(colon);
-
 			}
-			type( ttpV);
-			expect(SEMIC);
 		}
+		stpv2 = stptr;						// save ptr to last entry
+
+		expect( colon);
+		type( &ttpV);						// now, ttpV should have the type
+
+		do
+		{
+			symtab[ stpv1].idtyp = ttpV;
+			stpv1++;
+			//symtab[ stp1].varaddr = displ;
+			//symtab[ stp1].displ = displ + typetab[ ttpV].size;
+		} while ( stpv1 <= stpv2 );
+
+		printsymtab();
+
+		expect(SEMIC);
 
 	}
 	while (currTok == PROCEDURE_SYM)

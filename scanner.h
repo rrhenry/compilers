@@ -6,7 +6,7 @@
 #define SCANNER_H
 
 void qualident();
-void type( int ttp);
+void type( int* ttp);
 void FormParams();
 void ImportList();
 void StrucType();
