@@ -13,14 +13,14 @@ void StrucType();
 void DeclSeq();
 void Module();
 void ProcDecl();
-void StatSeq();
-void expr( int ttp);
+void StatSeq( int displ);
+void expr( int* ttp);
 void stat();
 void designator();
 void ActParams();
 void CaseStat();
 void WhileStat();
-void factor();
-void term();
+void factor( int* ttp);
+void term( int* ttp);
 
 #endif

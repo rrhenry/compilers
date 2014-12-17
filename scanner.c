@@ -132,13 +132,13 @@ int inttyp, realtyp, booltyp, chartyp, texttyp;
 
 typedef enum 				// classes of identifiers
 {
-	funccls
-	,paramcls
-	,typcls
-	,varcls
-	,constcls
-	,proccls
-	,stdpcls
+//	funccls,
+	paramcls,
+	typcls,
+	varcls,
+	constcls,
+	proccls,
+	stdpcls
 } IdClass;
 
 typedef enum				// types of types
@@ -183,6 +183,62 @@ struct typerec				// type struct
 	TypeForm form;			// type type
 };
 
+union constkind
+{
+	int intkind;
+	int boolkind;
+	int charkind;
+	double realkind;
+};
+
+struct constrec
+{
+	union constkind constkind;
+};
+
+struct paramstruct
+{
+	int varparam;
+	int paramaddr;
+};
+
+struct typstruct
+{
+	// intentionally left blank
+};
+
+struct varstruct
+{
+	int varaddr;
+};
+
+struct conststruct
+{
+	struct constrec constval;
+};
+
+struct procstruct
+{
+	int paddr;
+	int lastparam;
+	int resultaddr;
+};
+
+struct stdprocstruct
+{
+	int procnum;
+};
+
+union classData
+{
+	struct paramstruct pa;
+	struct typstruct t;
+	struct varstruct v;
+	struct conststruct c;
+	struct procstruct pr;
+	struct stdprocstruct s;
+};
+
 struct identrec 			// ident struct
 {
 	char name [16];			// name of the ident
@@ -190,9 +246,22 @@ struct identrec 			// ident struct
 	int idlev;				// static level of the ident decl
 	int idtyp;				// type of the ident
 	IdClass class;			// class of the ident (i.e. ref to class table)
-	int varaddr;
+	union classData classData;
 	// TODO: need to store class information
 };
+
+/*     Ident class substructs */
+
+/*
+	paramcls,
+	typcls,
+	varcls,
+	constcls,
+	proccls,
+	stdpcls
+*/
+
+/* END Ident class substructs */
 
 struct identrec symtab [256];  		// symbol table
 struct typerec typetab [128];		// type table
@@ -1268,13 +1337,13 @@ void type ( int* ttp)
 	fputs("Done type\n", stdout);
 }
 
-void SimplExpr ( int ttp)
+void SimplExpr ( int* ttp)
 {
 	if ( currTok == plus | currTok == minus )
 	{
 		Token addop = currTok;
 		nextSym();
-		checktypes( ttp, inttyp);
+		checktypes( *ttp, inttyp);
 		if (addop == minus)
 		{
 			genCode( opr, 0, 2);
@@ -1289,7 +1358,7 @@ void SimplExpr ( int ttp)
 
 }
 
-void expr ( int ttp)
+void expr ( int* ttp)
 {
 	fputs("This is expr\n", stdout);
 	SimplExpr( ttp);
@@ -1305,12 +1374,12 @@ void ActParams ()
 {
 	fputs("This is ActParams\n", stdout);
 	int ttp;
-	expr( ttp);
+	expr( &ttp);
 	fputs("HERE?\n", stdout);
 	while ( currTok == comma )
 	{
 		nextSym();
-		expr( ttp);
+		expr( &ttp);
 	}
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
@@ -1332,11 +1401,11 @@ void designator ()
 		{
 			int ttp;
 			nextSym();
-			expr( ttp);
+			expr( &ttp);
 			while( currTok == comma )
 			{
 				nextSym();
-				expr( ttp);
+				expr( &ttp);
 			}
 			expect(rbrac); 
 		}
@@ -1360,13 +1429,13 @@ void set()
 	int ttp;
 	do
 	{
-		expr( ttp);
+		expr( &ttp);
 		if ( currTok == period )
 		{
 			nextSym();
 			if ( currTok == period )
 			{
-				expr( ttp);
+				expr( &ttp);
 			}
 		}
 	}while ( currTok == comma ); 
@@ -1375,7 +1444,7 @@ void set()
 	fputs("Done set\n", stdout);
 }
 
-void factor( int ttp)
+void factor( int* ttp)
 {
 	fputs("This is factor\n", stdout);
 	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM )
@@ -1413,7 +1482,7 @@ void factor( int ttp)
 	fputs("Done factor\n", stdout);
 }
 
-void term( int ttp)
+void term( int* ttp)
 {
 	fputs("This is term \n", stdout);
 	factor( ttp);
@@ -1424,7 +1493,7 @@ void term( int ttp)
 	fputs("Done term\n", stdout);
 }
 
-void StatSeq ()
+void StatSeq ( int displ)
 {
 	fputs("This is statseq\n", stdout);
 	stat();
@@ -1437,21 +1506,21 @@ void StatSeq ()
 	
 }
 
-void AssignStat ()
+void AssignStat (int stp)
 {
 	fputs("This is AssignStat\n", stdout);
 	int ttp;
-	expr( ttp);
+	expr( &ttp);
 	fputs("Done AssignStat\n", stdout);
 }
 
-void RepeatStat ()
+void RepeatStat ( int displ)
 {
 	fputs("Start RepeatStat \n", stdout);
 	int ttp;
-	StatSeq();
+	StatSeq( displ);
 	expect(UNTIL_SYM);
-	expr( ttp);
+	expr( &ttp);
 	fputs("Done RepeatStat\n", stdout);
 }
 
@@ -1462,32 +1531,32 @@ void ProcCall ()
 }
 */
 
-void IfStat()
+void IfStat( int displ)
 {
 	int ttp;
 	fputs("This is IfStat\n", stdout);
-	expr( ttp);
+	expr( &ttp);
 	expect(THEN_SYM);
-	StatSeq();
+	StatSeq( displ);
 	
 	while ( currTok ==  ELSIF_SYM)
 	{
 		nextSym();
-		expr( ttp);
+		expr( &ttp);
 		nextSym();
 		expect(THEN_SYM);
-		StatSeq();
+		StatSeq( displ);
 	}
 	if ( currTok == ELSE_SYM )
 	{
 		nextSym();
-		StatSeq();
+		StatSeq( displ);
 	}
 	expect(END_SYM);
 	fputs("Done IfStat\n", stdout);
 }
 
-void caseP ()
+void caseP ( int displ)
 {
 	fputs("CASE HERE YO\n", stdout);
 	if( currTok == string | currTok == number | currTok == ident )
@@ -1513,74 +1582,74 @@ void caseP ()
 		
 		expect(SEMIC);
 		
-		StatSeq();		
+		StatSeq( displ);		
 	}
 	fputs("CASE END YO\n", stdout);
 	
 }
 
-void CaseStat ()
+void CaseStat ( int displ)
 {
 	fputs("This is CaseStat\n", stdout);
 	int ttp;
-	expr( ttp);
+	expr( &ttp);
 	expect(OF_SYM);
-	caseP();
+	caseP( displ);
 	while (currTok == OR_SYM)
 	{
 		nextSym();
-		caseP();
+		caseP( displ);
 	}
 	expect(END_SYM);
 	fputs("Done CaseStat\n", stdout);
 }
 
-void WhileStat()
+void WhileStat( int displ)
 {
 	fputs("Start WhileStat \n", stdout);
 	int ttp;
-	expr( ttp);
+	expr( &ttp);
 	expect(DO_SYM);
-	StatSeq();
+	StatSeq( displ);
 	while ( currTok == ELSIF_SYM)
 	{
 		nextSym();
-		expr( ttp);
+		expr( &ttp);
 		expect(DO_SYM);
-		StatSeq();
+		StatSeq( displ);
 	}
 	expect(END_SYM);
 	fputs("Done WhileStat\n", stdout);
 }
 
-void ForStat()
+void ForStat(int displ)
 {
 	int ttp1, ttp2;
 	fputs("Start ForStat\n", stdout);
 	expect(ident);
 	expect(assign);
-	expr( ttp1);
+	expr( &ttp1);
 	expect(TO_SYM);
-	expr( ttp2);
+	expr( &ttp2);
 	if (currTok == BY_SYM)
 	{
 		nextSym();
-		expr( ttp1);
+		expr( &ttp1);
 	}
 	expect(DO_SYM);
-	StatSeq();
+	StatSeq( displ);
 	expect(END_SYM);
 	fputs("Done ForStat\n", stdout);
 }
 
-void stat ()
+void stat ( displ)
 {
-	int ttp;
+	int ttp, stp;
 	fputs("ENTERING stat\n", stdout);
 	//  REPEATSTAT
 	if ( currTok == REPEAT_SYM )
 	{
-		RepeatStat();
+		RepeatStat( displ);
 	} 
 	// ASSIGNSTAT or PROC CALL
 	else if ( currTok == ident )
@@ -1591,7 +1660,7 @@ void stat ()
 		if( currTok == assign)
 		{
 			nextSym();
-			AssignStat();
+			AssignStat( stp);
 		}
 		else if( currTok == lparen )
 		{
@@ -1604,14 +1673,14 @@ void stat ()
 	else if ( currTok == IF_SYM)
 	{
 		nextSym();
-		IfStat();
+		IfStat( displ);
 		
 	}
 	// CASESTAT
 	else if ( currTok == CASE_SYM )
 	{
 		nextSym();
-		CaseStat();
+		CaseStat( displ);
 			
 	}	
 	// WHILESTAT
@@ -1619,14 +1688,14 @@ void stat ()
 	{
 		fputs("This is whileSYM\n", stdout);
 		nextSym();
-		WhileStat();
+		WhileStat( displ);
 		
 	} 
 	// FORSTAT
 	else if ( currTok == FOR_SYM)
 	{
 		nextSym();
-		ForStat();
+		ForStat( displ);
 	}
 	fputs("Done stat\n", stdout);
 }
@@ -1731,7 +1800,7 @@ void StrucType ()
 		do
 		{
 			nextSym();
-			expr( ttp);
+			expr( &ttp);
 		}while(currTok == comma);
 
 		expect(OF_SYM);
@@ -1776,14 +1845,14 @@ void ProcDecl ()
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
-		StatSeq();
+		StatSeq( displ);
 	}
 	
 	if(currTok == RETURN_SYM)
 	{	
 		nextSym();
 		int ttpR;
-		expr( ttpR);
+		expr( &ttpR);
 	}
 	expect(END_SYM);
 	expect(ident);
@@ -1810,7 +1879,7 @@ void identList()
 	}
 }
 
-void DeclSeq ()
+void DeclSeq ( int displ)
 {
 	fputs("This is DeclSeq\n", stdout);
 
@@ -1824,7 +1893,7 @@ void DeclSeq ()
 			if(currTok == mul)
 				nextSym();
 			expect(equal);
-			expr( ttpC);
+			expr( &ttpC);
 			expect(SEMIC);
 		}
 	}
@@ -1893,8 +1962,8 @@ void DeclSeq ()
 		{
 			symtab[ stpv1].idtyp = ttpV;
 			stpv1++;
-			//symtab[ stp1].varaddr = displ;
-			//symtab[ stp1].displ = displ + typetab[ ttpV].size;
+			symtab[ stpv1].classData.v.varaddr = displ;
+			displ = displ + typetab[ ttpV].size;
 		} while ( stpv1 <= stpv2 );
 
 		printsymtab();
@@ -1921,6 +1990,11 @@ void Module ()
 	expect(SEMIC);
 
 	enterScope();
+	// Entering code segment of module.
+	int displ = 1;							// initialize displacement
+	int savstptr = stptr;					// save entry point
+	int savlc = lc;
+	genCode( jmp, 0, 0);
 
 	if(currTok == IMPORT_SYM)
 	{
@@ -1929,12 +2003,12 @@ void Module ()
 	}
 		
 
-	DeclSeq();
+	DeclSeq( displ);
 
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
-		StatSeq();
+		StatSeq( displ);
 	}
 		
 
