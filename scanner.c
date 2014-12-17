@@ -1536,10 +1536,20 @@ void AssignStat (int stp)
 void RepeatStat ( int displ)
 {
 	fputs("Start RepeatStat \n", stdout);
-	int ttp;
+	int ttp, savlc;
+	savlc = lc;									// save location for later jump
 	StatSeq( displ);
-	expect(UNTIL_SYM);
-	expr( &ttp);
+	if ( currTok	== UNTIL_SYM)
+	{
+		nextSym();
+		expr( &ttp);
+		checktypes( booltyp, ttp);
+		gencode( jmpc, 0, savlc);
+	}
+	else
+	{
+		error(33);
+	}
 	fputs("Done RepeatStat\n", stdout);
 }
 
@@ -1637,10 +1647,16 @@ void CaseStat ( int displ)
 void WhileStat( int displ)
 {
 	fputs("Start WhileStat \n", stdout);
-	int ttp;
+	int ttp, savlc1, savlc2;
+	savlc1 = lc;
 	expr( &ttp);
+	checktypes( booltyp, ttp);
+	savlc2 = lc;
+	gencode( jmpc, 0, 0);
 	expect(DO_SYM);
 	StatSeq( displ);
+	gencode( jmp, 0, savlc1);
+	code[ savlc2].ad = lc;
 	while ( currTok == ELSIF_SYM)
 	{
 		nextSym();
