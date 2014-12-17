@@ -291,6 +291,12 @@ void insertid( char id [16], IdClass cls)
 
 }
 
+void checktypes(int ttp1, int ttp2)
+{
+	if (ttp1 != ttp2)
+		printf("Type mismatch! Oh no!\n");
+}
+
 //* BEGIN: Subset of Code Gen methods -- compiler initialization *//
 
 void initstdmnemonics()
@@ -1216,53 +1222,60 @@ void qualident()
 	fputs("Done qualident.\n", stdout);
 }
 
-void type ()
+void type ( int ttp)
 {
 	fputs("This is type\n", stdout); 
 	
 	if ( currTok == ident )
 		qualident();
 	else if ( currTok == RECORD_SYM | currTok == ARRAY_SYM | currTok == POINTER_SYM | currTok == PROCEDURE_SYM )  
-		StrucType();
+		StrucType( ttp);
 	fputs("Done type\n", stdout);
 }
 
-void SimplExpr ()
+void SimplExpr ( int ttp)
 {
 	if ( currTok == plus | currTok == minus )
 	{
+		Token addop = currTok;
 		nextSym();
+		checktypes( ttp, inttyp);
+		if (addop == minus)
+		{
+			genCode( opr, 0, 2);
+		}
 	}
-	term();
+	term( ttp);
 	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
 		nextSym();
-		term();
+		term( ttp);
 	}
 
 }
 
-void expr ()
+void expr ( int ttp)
 {
 	fputs("This is expr\n", stdout);
-	SimplExpr();
+	SimplExpr( ttp);
 	fputs("Done expr\n", stdout);
 	if( currTok == equal | currTok == notEqual | currTok == lt | currTok == lte | currTok == gt | currTok == gte | currTok == IN_SYM | currTok == IS_SYM )
 	{
 		nextSym();
-		SimplExpr();
+		SimplExpr( ttp);
 	}
 }
 
 void ActParams ()
 {
 	fputs("This is ActParams\n", stdout);
-	expr();
+	int ttp;
+	expr( ttp);
 	fputs("HERE?\n", stdout);
 	while ( currTok == comma )
 	{
 		nextSym();
-		expr();
+		expr( ttp);
 	}
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
@@ -1282,12 +1295,13 @@ void designator ()
 			 
 		else if ( currTok ==  lbrac )
 		{
+			int ttp;
 			nextSym();
-			expr();
+			expr( ttp);
 			while( currTok == comma )
 			{
 				nextSym();
-				expr();
+				expr( ttp);
 			}
 			expect(rbrac); 
 		}
@@ -1308,15 +1322,16 @@ void designator ()
 void set()
 {
 	fputs("This is set\n", stdout);
+	int ttp;
 	do
 	{
-		expr();
+		expr( ttp);
 		if ( currTok == period )
 		{
 			nextSym();
 			if ( currTok == period )
 			{
-				expr();
+				expr( ttp);
 			}
 		}
 	}while ( currTok == comma ); 
@@ -1325,7 +1340,7 @@ void set()
 	fputs("Done set\n", stdout);
 }
 
-void factor()
+void factor( int ttp)
 {
 	fputs("This is factor\n", stdout);
 	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM )
@@ -1346,14 +1361,14 @@ void factor()
 	else if ( currTok == lparen )
 	{
 		nextSym();
-		expr();
+		expr( ttp);
 		fputs("Here... \n", stdout);
 		expect(rparen);
 	}
 	else if ( currTok == tilde )
 	{
 		nextSym();
-		factor();
+		factor( ttp);
 	}
 	else if ( currTok == lcurly )
 	{
@@ -1363,13 +1378,13 @@ void factor()
 	fputs("Done factor\n", stdout);
 }
 
-void term()
+void term( int ttp)
 {
 	fputs("This is term \n", stdout);
-	factor();
+	factor( ttp);
 	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
 	{
-		factor();
+		factor( ttp);
 	}
 	fputs("Done term\n", stdout);
 }
@@ -1390,16 +1405,18 @@ void StatSeq ()
 void AssignStat ()
 {
 	fputs("This is AssignStat\n", stdout);
-	expr();
+	int ttp;
+	expr( ttp);
 	fputs("Done AssignStat\n", stdout);
 }
 
 void RepeatStat ()
 {
 	fputs("Start RepeatStat \n", stdout);
+	int ttp;
 	StatSeq();
 	expect(UNTIL_SYM);
-	expr();
+	expr( ttp);
 	fputs("Done RepeatStat\n", stdout);
 }
 
@@ -1412,15 +1429,16 @@ void ProcCall ()
 
 void IfStat()
 {
+	int ttp;
 	fputs("This is IfStat\n", stdout);
-	expr();
+	expr( ttp);
 	expect(THEN_SYM);
 	StatSeq();
 	
 	while ( currTok ==  ELSIF_SYM)
 	{
 		nextSym();
-		expr();
+		expr( ttp);
 		nextSym();
 		expect(THEN_SYM);
 		StatSeq();
@@ -1469,7 +1487,8 @@ void caseP ()
 void CaseStat ()
 {
 	fputs("This is CaseStat\n", stdout);
-	expr();
+	int ttp;
+	expr( ttp);
 	expect(OF_SYM);
 	caseP();
 	while (currTok == OR_SYM)
@@ -1484,13 +1503,14 @@ void CaseStat ()
 void WhileStat()
 {
 	fputs("Start WhileStat \n", stdout);
-	expr();
+	int ttp;
+	expr( ttp);
 	expect(DO_SYM);
 	StatSeq();
 	while ( currTok == ELSIF_SYM)
 	{
 		nextSym();
-		expr();
+		expr( ttp);
 		expect(DO_SYM);
 		StatSeq();
 	}
@@ -1500,16 +1520,17 @@ void WhileStat()
 
 void ForStat()
 {
+	int ttp1, ttp2;
 	fputs("Start ForStat\n", stdout);
 	expect(ident);
 	expect(assign);
-	expr();
+	expr( ttp1);
 	expect(TO_SYM);
-	expr();
+	expr( ttp2);
 	if (currTok == BY_SYM)
 	{
 		nextSym();
-		expr();
+		expr( ttp1);
 	}
 	expect(DO_SYM);
 	StatSeq();
@@ -1519,6 +1540,7 @@ void ForStat()
 
 void stat ()
 {
+	int ttp;
 	fputs("ENTERING stat\n", stdout);
 	//  REPEATSTAT
 	if ( currTok == REPEAT_SYM )
@@ -1635,7 +1657,7 @@ void ImportList ()
 void StrucType ()
 {
 	fputs("This is StrucType\n", stdout);
-
+	int ttp;
 	if(currTok == RECORD_SYM)
 	{
 		nextSym();
@@ -1660,7 +1682,7 @@ void StrucType ()
 					nextSym();
 			}
 			expect(colon);
-			type();
+			type( ttp);
 		}while(currTok == SEMIC);
 		
 		expect(END_SYM);
@@ -1671,17 +1693,17 @@ void StrucType ()
 		do
 		{
 			nextSym();
-			expr();
+			expr( ttp);
 		}while(currTok == comma);
 
 		expect(OF_SYM);
-		type();
+		type( ttp);
 	}
 	else if(currTok == POINTER_SYM)
 	{
 		nextSym();
 		expect(TO_SYM);
-		type();
+		type( ttp);
 	}
 	else if(currTok == PROCEDURE_SYM)
 	{
@@ -1707,6 +1729,8 @@ void ProcDecl ()
 	}
 		
 	expect(SEMIC);
+
+	/* ProcBody */
 	DeclSeq();
 	if(currTok == BEGIN_SYM)
 	{
@@ -1717,7 +1741,8 @@ void ProcDecl ()
 	if(currTok == RETURN_SYM)
 	{	
 		nextSym();
-		expr();
+		int ttpR;
+		expr( ttpR);
 	}
 	expect(END_SYM);
 	expect(ident);
@@ -1730,6 +1755,7 @@ void DeclSeq ()
 
 	if (currTok == CONST_SYM)
 	{
+		int ttpC;
 		nextSym();
 		while (currTok == ident)
 		{
@@ -1737,7 +1763,7 @@ void DeclSeq ()
 			if(currTok == mul)
 				nextSym();
 			expect(equal);
-			expr();
+			expr( ttpC);
 			expect(SEMIC);
 		}
 	}
@@ -1759,6 +1785,7 @@ void DeclSeq ()
 		nextSym();
 		while(currTok == ident)
 		{
+			int ttpV;
 			nextSym();
 			if(currTok == mul)
 				nextSym();
@@ -1771,7 +1798,7 @@ void DeclSeq ()
 				expect(colon);
 
 			}
-			type();
+			type( ttpV);
 			expect(SEMIC);
 		}
 
