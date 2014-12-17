@@ -240,7 +240,7 @@ void enterstdident ( char id [], IdClass cls, int ttp)
 	scopetab[ currlev] = stptr;
 }
 
-void searchid( char id [16])
+int searchid( char id [16])
 {
 	int stp = stptr;				// local symbol table ptr
 	int lev = 0;					// local var for level
@@ -250,14 +250,18 @@ void searchid( char id [16])
 	do
 	{
 		stp = scopetab[ lev];
+		printf("%d: stp\n", stp);
 		while ( strcmp(symtab[ stp].name, id) != 0)
 		{
 			stp = symtab[ stp].previd;
 		}
-	} while (stp == 0 || lev >= 0);
+		lev --;
+	} while (stp == 0 && lev >= 0);
 
 	if (stp == 0)
-		fputs("ERROR: 42 Undeclared identifier.\n", stdout);
+		printf("ERROR: 42 Undeclared identifier: %s\n", id);
+
+	return stp;
 }
 
 void insertid( char id [16], IdClass cls)
@@ -395,7 +399,7 @@ void printsymtab()
 	printf("      name             level   type  previd\n");		// TOADD addr  
 
 	int i;
-	for ( i = 1; i < stptr; i++)
+	for ( i = 1; i <= stptr; i++)
 	{
 		printf("%4d:%16s %6d %6d %7d\n", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
 	}
@@ -1550,8 +1554,9 @@ void stat ()
 	// ASSIGNSTAT or PROC CALL
 	else if ( currTok == ident )
 	{
+		int stp = searchid(currWord);
 		designator();
-		//nextSym();
+
 		if( currTok == assign)
 		{
 			nextSym();
@@ -1661,6 +1666,7 @@ void StrucType ()
 	if(currTok == RECORD_SYM)
 	{
 		nextSym();
+		enterScope();
 		if(currTok == lparen)
 		{
 			nextSym();
@@ -1685,6 +1691,7 @@ void StrucType ()
 			type( ttp);
 		}while(currTok == SEMIC);
 		
+		exitScope();
 		expect(END_SYM);
 	}
 	else if(currTok == ARRAY_SYM)
@@ -1718,10 +1725,13 @@ void StrucType ()
 void ProcDecl ()
 {
 	fputs("Start ProcDecl\n", stdout);
+	int displ = -2;							// displacement for param addr
 	expect(ident);
 	if(currTok == mul)
 		nextSym();
 	
+	enterScope();
+
 	if(currTok == lparen)
 	{
 		nextSym();
@@ -1746,6 +1756,7 @@ void ProcDecl ()
 	}
 	expect(END_SYM);
 	expect(ident);
+	exitScope();
 	fputs("Done ProcDecl\n", stdout);
 }
 
@@ -1753,9 +1764,9 @@ void DeclSeq ()
 {
 	fputs("This is DeclSeq\n", stdout);
 
-	if (currTok == CONST_SYM)
+	if (currTok == CONST_SYM)		/* ConstDecl */
 	{
-		int ttpC;
+		int ttpC;	
 		nextSym();
 		while (currTok == ident)
 		{
@@ -1767,7 +1778,7 @@ void DeclSeq ()
 			expect(SEMIC);
 		}
 	}
-	else if (currTok == TYPE_SYM)
+	else if (currTok == TYPE_SYM)	/* TypeDecl */
 	{
 		nextSym();
 		while(currTok == ident)
@@ -1780,19 +1791,28 @@ void DeclSeq ()
 			expect(SEMIC);
 		}
 	}
-	else if (currTok == VAR_SYM)
+	else if (currTok == VAR_SYM)	/* VarDecl */
 	{
 		nextSym();
 		while(currTok == ident)
 		{
 			int ttpV;
+			insertid( currWord, varcls);
+			printsymtab();
 			nextSym();
 			if(currTok == mul)
 				nextSym();
 			if(currTok == comma)
 			{
 				nextSym();
-				expect(ident);
+				
+				if (currTok == ident)
+				{
+					insertid(currWord, varcls);
+					printsymtab();
+					nextSym();
+				}
+
 				if(currTok == mul)
 					nextSym();
 				expect(colon);
@@ -1820,6 +1840,8 @@ void Module ()
 	expect(MODULE_SYM);
 	expect(ident);
 	expect(SEMIC);
+
+	enterScope();
 
 	if(currTok == IMPORT_SYM)
 	{
