@@ -1301,6 +1301,8 @@ void expect (Token t)
 	nextSym();
 }
 
+
+//	qualident -> [ ident . ] ident
 void qualident()
 {
 	fputs("This is a qualident\n", stdout);
@@ -1314,6 +1316,7 @@ void qualident()
 	fputs("Done qualident.\n", stdout);
 }
 
+//	type -> qualident | StrucType
 void type ( int* ttp)
 {
 	fputs("This is type\n", stdout); 
@@ -1337,6 +1340,7 @@ void type ( int* ttp)
 	fputs("Done type\n", stdout);
 }
 
+//	SimplExp -> [ + | - ] term [ addop term ]
 void SimplExpr ( int* ttp)
 {
 	if ( currTok == plus | currTok == minus )
@@ -1350,6 +1354,8 @@ void SimplExpr ( int* ttp)
 		}
 	}
 	term( ttp);
+	
+	// addop -> + | - | OR
 	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
 		nextSym();
@@ -1358,11 +1364,14 @@ void SimplExpr ( int* ttp)
 
 }
 
+//	expr -> SimplExpr [ relop SimplExp ]
 void expr ( int* ttp)
 {
 	fputs("This is expr\n", stdout);
 	SimplExpr( ttp);
 	fputs("Done expr\n", stdout);
+	
+	//	relop -> = | # | < | <= | >= | IN | IS
 	if( currTok == equal | currTok == notEqual | currTok == lt | currTok == lte | currTok == gt | currTok == gte | currTok == IN_SYM | currTok == IS_SYM )
 	{
 		nextSym();
@@ -1370,12 +1379,14 @@ void expr ( int* ttp)
 	}
 }
 
+//	ActParams -> '(' [ ExprList ] ')'
+//	ExprList -> expr {, expr } 
 void ActParams ()
 {
 	fputs("This is ActParams\n", stdout);
 	int ttp;
 	expr( &ttp);
-	fputs("HERE?\n", stdout);
+//	fputs("HERE?\n", stdout);
 	while ( currTok == comma )
 	{
 		nextSym();
@@ -1385,6 +1396,8 @@ void ActParams ()
 	fputs("Done ActParams\n", stdout);
 }
 
+//	designator -> qualident { selector }
+//	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')' 
 void designator ()
 {
 	fputs("This is designator\n", stdout);
@@ -1400,6 +1413,8 @@ void designator ()
 		else if ( currTok ==  lbrac )
 		{
 			int ttp;
+			
+			// ExprList -> expr { , expr }
 			nextSym();
 			expr( &ttp);
 			while( currTok == comma )
@@ -1423,12 +1438,26 @@ void designator ()
 	fputs("Done designator\n", stdout);
 }
 
+//	set -> '{' [ elem { , elem } ] '}'
 void set()
 {
 	fputs("This is set\n", stdout);
 	int ttp;
-	do
+	
+	//	elem -> expr [ .. expr ]
+	expr( &ttp);
+	if ( currTok == period )
 	{
+		nextSym();
+		if ( currTok == period )
+		{
+			expr( &ttp);
+		}
+	}
+	
+	while ( currTok == comma )
+	{
+		nextSym();
 		expr( &ttp);
 		if ( currTok == period )
 		{
@@ -1438,12 +1467,19 @@ void set()
 				expr( &ttp);
 			}
 		}
-	}while ( currTok == comma ); 
+	} 
 
 	expect(rcurly);
 	fputs("Done set\n", stdout);
 }
 
+/*	
+	factor -> num | string | NIL | TRUE | FALSE 
+			| set 
+			| designator [ ActParams ]
+			| '(' expr ')' 
+			| ~ factor
+*/
 void factor( int* ttp)
 {
 	fputs("This is factor\n", stdout);
@@ -1453,7 +1489,7 @@ void factor( int* ttp)
 	}
 	else if ( currTok == ident )
 	{
-		fputs("Why not here??\n", stdout);
+		//fputs("Why not here??\n", stdout);
 		designator();
 		if( currTok == lparen)
 		{
@@ -1466,7 +1502,7 @@ void factor( int* ttp)
 	{
 		nextSym();
 		expr( ttp);
-		fputs("Here... \n", stdout);
+	//	fputs("Here... \n", stdout);
 		expect(rparen);
 	}
 	else if ( currTok == tilde )
@@ -1482,10 +1518,13 @@ void factor( int* ttp)
 	fputs("Done factor\n", stdout);
 }
 
+//	term -> factor { mulop factor }
 void term( int* ttp)
 {
 	fputs("This is term \n", stdout);
 	factor( ttp);
+	
+	//	mulop -> * | / | DIV | MOD | &
 	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
 	{
 		factor( ttp);
@@ -1493,6 +1532,7 @@ void term( int* ttp)
 	fputs("Done term\n", stdout);
 }
 
+//	StatSeq -> stat { ; stat }
 void StatSeq ( int displ)
 {
 	fputs("This is statseq\n", stdout);
@@ -1506,6 +1546,7 @@ void StatSeq ( int displ)
 	
 }
 
+//	AssignStat -> designator := expr
 void AssignStat (int stp)
 {
 	fputs("This is AssignStat\n", stdout);
@@ -1533,6 +1574,7 @@ void AssignStat (int stp)
 	fputs("Done AssignStat\n", stdout);
 }
 
+//	RepeatStat -> REPEAT StatSeq UNTIL expr
 void RepeatStat ( int displ)
 {
 	fputs("Start RepeatStat \n", stdout);
@@ -1554,12 +1596,10 @@ void RepeatStat ( int displ)
 }
 
 /*
-void ProcCall ()
-{
-	fputs("This is ProcCall\n", stdout);
-}
+	IfStat -> IF expr THEN StatSeq
+			{ ELSIF expr THEN StatSeq }
+			[ ELSE StatSeq ] END
 */
-
 void IfStat( int displ)
 {
 	int ttp, savlc1, savlc2;
@@ -1578,7 +1618,7 @@ void IfStat( int displ)
 		nextSym();
 		expr( &ttp);
 		//checktypes( ttp, booltyp);
-		nextSym();						// ??
+		//nextSym();						// ??
 		expect(THEN_SYM);
 		//savlc1 = lc;
 		StatSeq( displ);
@@ -1596,9 +1636,16 @@ void IfStat( int displ)
 	fputs("Done IfStat\n", stdout);
 }
 
+//	case -> [ CaseLabList : StatSeq ]
 void caseP ( int displ)
 {
 	fputs("CASE HERE YO\n", stdout);
+	/* 
+		CaseLabList -> LabelRange { , LabelRange }
+		LabelRange -> label [ .. label ]
+		label -> integer | string | ident
+	
+	*/ 
 	if( currTok == string | currTok == number | currTok == ident )
 	{
 		do
@@ -1620,14 +1667,18 @@ void caseP ( int displ)
 			
 		}while ( currTok == comma);
 		
-		expect(SEMIC);
+		expect(colon);   // THIS WAS SEMIC BEFORE I CHANGED IT. IN THE GRAMMAR, IT SHOWS A COLON. 
+						// IF IT HAS BROKEN, PLEASE PUT SEMIC BACK. MAYBE GRAMMAR IS WRONG??
 		
 		StatSeq( displ);		
 	}
 	fputs("CASE END YO\n", stdout);
 	
 }
-
+/*
+	CaseStat -> CASE expr OF 
+				case { '|' case } END
+*/
 void CaseStat ( int displ)
 {
 	fputs("This is CaseStat\n", stdout);
@@ -1644,6 +1695,10 @@ void CaseStat ( int displ)
 	fputs("Done CaseStat\n", stdout);
 }
 
+/* 
+	WhileStat -> WHILE expr DO StatSeq
+				{ ELSIF expr DO StatSeq } END  
+*/
 void WhileStat( int displ)
 {
 	fputs("Start WhileStat \n", stdout);
@@ -1668,6 +1723,10 @@ void WhileStat( int displ)
 	fputs("Done WhileStat\n", stdout);
 }
 
+/*
+	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END
+	ConstExpr -> expr
+*/	
 void ForStat(int displ)
 {
 	int ttp1, ttp2;
@@ -1688,6 +1747,11 @@ void ForStat(int displ)
 	fputs("Done ForStat\n", stdout);
 }
 
+
+/*
+	stat -> [ AssignStat | ProcCall | IfStat | CaseStat | WhileStat | 
+				RepeatStat | ForStat ]
+*/
 void stat ( displ)
 {
 	int ttp, stp;
@@ -1697,7 +1761,7 @@ void stat ( displ)
 	{
 		RepeatStat( displ);
 	} 
-	// ASSIGNSTAT or PROC CALL
+	// ASSIGNSTAT or PROCCALL
 	else if ( currTok == ident )
 	{
 		searchid(currWord, &stptr);
@@ -1708,6 +1772,7 @@ void stat ( displ)
 			nextSym();
 			AssignStat( stp);
 		}
+		//	ProcCall -> designator [ ActParams ]
 		else if( currTok == lparen )
 		{
 			nextSym();
@@ -1746,10 +1811,13 @@ void stat ( displ)
 	fputs("Done stat\n", stdout);
 }
 
+//	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'
 void FormParams ()
 {
 	fputs("This is FormParams\n", stdout);
-	do
+	
+	//	FormParamSect -> [ VAR ] ident { , ident } : FormType
+	if ( currTok == VAR_SYM | currTok == ident )
 	{
 		if(currTok == VAR_SYM)
 			nextSym();
@@ -1764,24 +1832,60 @@ void FormParams ()
 
 		expect(colon);
 		
-		if ( currTok == ARRAY_SYM )
+		//	FormType -> { ARRAY OF } qualident
+		while ( currTok == ARRAY_SYM )
+		{
+			nextSym();
 			expect(OF_SYM);
+		}	
 		qualident();
-		//nextSym();
 
-	}while(currTok == SEMIC);
+		// { ; FormParamSect }
+		while ( currTok == SEMIC )
+		{
+			nextSym();
+			if(currTok == VAR_SYM)
+				nextSym();
+
+			expect(ident);
+
+			while (currTok == comma)
+			{
+				nextSym();
+				expect(ident);
+			}
+
+			expect(colon);
+			
+			//	FormType -> { ARRAY OF } qualident
+			while ( currTok == ARRAY_SYM )
+			{
+				nextSym();
+				expect(OF_SYM);
+			}	
+			qualident();
+			
+		}
+
+	}
 
 	expect(rparen);
-	expect(colon);
-	qualident();
+	if ( currTok == colon)
+	{
+		nextSym();
+		qualident();
+	}
+
 	fputs("End FormParams\n", stdout);
 }
-
+ 
+ 
+//	ImportList -> IMPORT import { , import }
 void ImportList ()
 {
 	fputs("This is importList\n", stdout);
-	//expect(IMPORT_SYM);
 
+	// import -> ident [ := ident ]
 	expect(ident);
 	if(currTok == assign)
 	{
@@ -1789,6 +1893,7 @@ void ImportList ()
 		expect(ident);
 	}
 	
+	// { , import }
 	while(currTok == comma)
 	{
 		nextSym();
@@ -1805,41 +1910,44 @@ void ImportList ()
 	fputs("End ImportList\n", stdout);
 }
 
+
+//	StrucType -> ArrayType | RecType | PointerType | ProcType
 void StrucType ()
 {
 	fputs("This is StrucType\n", stdout);
 	int ttp;
+	//	RecType -> RECORD [ '(' BaseType ')' ] [ FieldListSeq ] END
 	if(currTok == RECORD_SYM)				/* TODO: This has to change to be good I think? */
-	{
+	{										/* I changed it up a bit. I think this should work */
 		nextSym();
 		enterScope();
 		if(currTok == lparen)
 		{
 			nextSym();
+			//	BaseType -> qualident
 			qualident();
 			expect(rparen);
 		}
 		
-		do
+		/* 
+			FieldListSeq -> FieldList { FieldList }
+			FieldList -> IdentList : type
+		*/
+		while ( currTok == ident )
 		{
-			expect(ident);
-			if(currTok == mul)
-				nextSym();
-
-			if(currTok == comma)
-			{
-				nextSym();
-				expect(ident);
-				if(currTok == mul)
-					nextSym();
-			}
+			identList();
 			expect(colon);
 			type( &ttp);
-		}while(currTok == SEMIC);
+		}
 		
 		exitScope();
 		expect(END_SYM);
 	}
+	/*
+		ArrayType -> ARRAY length { , length } OF type
+		length -> ConstExpr
+		ConstExpr -> expr
+	*/
 	else if(currTok == ARRAY_SYM)
 	{
 		
@@ -1852,12 +1960,14 @@ void StrucType ()
 		expect(OF_SYM);
 		type( &ttp);
 	}
+	//	PointerType -> POINTER TO type
 	else if(currTok == POINTER_SYM)
 	{
 		nextSym();
 		expect(TO_SYM);
 		type( &ttp);
 	}
+	//	ProcType -> PROCEDURE [ FormParams ]
 	else if(currTok == PROCEDURE_SYM)
 	{
 		nextSym();
@@ -1868,16 +1978,23 @@ void StrucType ()
 	fputs("Done StrucType\n", stdout);
 }
 
+//	ProcDecl -> ProcHead ; ProcBody ident
 void ProcDecl ()
 {
 	fputs("Start ProcDecl\n", stdout);
 	int displ = -2;							// displacement for param addr
+
+	/* 
+		ProcHead -> PROCEDURE identdef [ FormParams ]
+		identdef -> ident [ * ]
+	*/
 	expect(ident);
 	if(currTok == mul)
 		nextSym();
 	
 	enterScope();
 
+	
 	if(currTok == lparen)
 	{
 		nextSym();
@@ -1886,7 +2003,8 @@ void ProcDecl ()
 		
 	expect(SEMIC);
 
-	/* ProcBody */
+
+	//	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END
 	DeclSeq();
 	if(currTok == BEGIN_SYM)
 	{
@@ -1906,9 +2024,13 @@ void ProcDecl ()
 	fputs("Done ProcDecl\n", stdout);
 }
 
+
+/* 
+	identList -> identdef { , identdef } 
+	identdef  -> ident [ * ] 				
+*/
 void identList()
-{	/* identList -> identdef { , identdef } 
-	   identdef  -> ident [ * ] 				*/
+{	
 	expect( ident);
 	if ( currTok == mul)
 	{
@@ -1925,11 +2047,23 @@ void identList()
 	}
 }
 
+/*
+	DeclSeq -> [ CONST { ConstDecl ; } ]
+			[ TYPE { TypeDecl ; } ]
+			[ VAR { VarDecl ; } ]
+			{ ProcDecl ; }
+*/
 void DeclSeq ( int displ)
 {
 	fputs("This is DeclSeq\n", stdout);
 
-	if (currTok == CONST_SYM)		/* ConstDecl */
+	
+	/*
+		ConstDecl -> identdef = ConstExpr
+		identdef -> ident [ * ]
+		ConstExpr -> expr
+	*/
+	if (currTok == CONST_SYM)		
 	{
 		int ttpC;	
 		nextSym();
@@ -1943,7 +2077,12 @@ void DeclSeq ( int displ)
 			expect(SEMIC);
 		}
 	}
-	else if (currTok == TYPE_SYM)	/* TypeDecl */
+	
+	/* 
+		TypeDecl -> identdef = StrucType
+		identdef -> ident [ * ]
+	*/
+	else if (currTok == TYPE_SYM)
 	{
 		nextSym();
 		while(currTok == ident)
@@ -1956,6 +2095,8 @@ void DeclSeq ( int displ)
 			expect(SEMIC);
 		}
 	}
+	
+	//	VarDecl -> identList : type
 	else if (currTok == VAR_SYM)	/* VarDecl */
 	{
 		int stpv1, stpv2, ttpV;
@@ -1963,6 +2104,10 @@ void DeclSeq ( int displ)
 		nextSym();
 
 		/* identList */
+		/* 
+			We have an identList method. Is there a specific reason it's not being used?
+			Did I forget there was one? Did YOU creat it? Should we even call it here?
+		*/
 
 		if ( currTok == ident)
 		{
@@ -2017,6 +2162,7 @@ void DeclSeq ( int displ)
 		expect(SEMIC);
 
 	}
+	/* ProcDecl */
 	while (currTok == PROCEDURE_SYM)
 	{
 			nextSym();
@@ -2027,8 +2173,21 @@ void DeclSeq ( int displ)
 	fputs("End of DeclSeq\n", stdout);
 }
 
+
+/* 
+	module -> MODULE ident ; 
+	[ ImportList ]
+	DeclSeq
+	[ BEGIN StatSeq ]
+	END ident .
+*/
 void Module ()
 {
+	/*
+		JUST A THOUGHT: Herman likes augmented gramars, and parsers which have an 
+		S -> M, right? Such that nextSym() is called in the same proc as Module is called.
+		Should we eliminate nextSym() here and call it where we call Module()? Like in Scan?
+	*/ 
 	fputs("Enter Module \n", stdout);
 	nextSym();
 	expect(MODULE_SYM);

@@ -22,5 +22,6 @@ void CaseStat();
 void WhileStat();
 void factor( int* ttp);
 void term( int* ttp);
+void identList();
 
 #endif
