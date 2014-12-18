@@ -77,6 +77,7 @@ char currWord [64];				// Word being worked on. Delimited by found whitespaces
 								// and to be compared to a table of reserved words
 char currNum [64];      		// Simply saving the num so as to pass it on over later,
 								// if needed.
+int intval;						// value of the integer in currNum, if applicable
 int gotNewLine = 0;
 Token setTok;
 //int eofParsed = 0;
@@ -1531,35 +1532,104 @@ void set()
 */
 void factor( int* ttp)
 {
-	fputs("This is factor\n", stdout);
-	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM )
+	int stp;
+	/*
+
+	switch ( currTok)
 	{
+		case integer:					// int const
+			ttp = inttyp;
+			gencode( pshc, 0, intval);
+			nextSym();
+			break;
+		case real:						// real const
+			nextSym();
+			break;
+		case string:
+			nextSym();
+			break;
+		case NIL_SYM:
+			nextSym();
+			break;
+		case TRUE_SYM:					// skip for now... should gen true
+			nextSym();
+			break;
+		case FALSE_SYM:					// skip for now... should gen false
+			nextSym();
+			break;
+		case ident:
+			searchid( currWord, &stp);
+			if ( stp == 0)
+			{
+				error( 11);
+			}
+			else
+			{
+				ttp = idtyp;
+				switch( symtab[ stp].class)
+				{
+					case constcls:
+						break;
+					case varcls:
+						break;
+					case paramcls:
+						break;
+					case proccls:
+						break;
+					case stdfcls:
+						break;
+				}
+			}
+			break;
+		case lparen:
+			nextSym();
+			expr( ttp);
+			expect(rparen);
+			break;
+		case tilde:
+			nextSym();
+			factor( ttp);
+			break;
+		case lcurly:
+			nextSym();
+			set();
+			break;
+	}
+
+	*/
+
+	fputs("This is factor\n", stdout);
+	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM)
+	{
+		// Here we need to distringuish between integer or real, since
+		// num -> integer | real
+
 		nextSym();
 	}
-	else if ( currTok == ident )
+	else if ( currTok == ident)
 	{
 		//fputs("Why not here??\n", stdout);
 		designator();
 		if( currTok == lparen)
 		{
 			nextSym();
-			ActParams();	
+			ActParams();
 		}
 	
 	}
-	else if ( currTok == lparen )
+	else if ( currTok == lparen)
 	{
 		nextSym();
 		expr( ttp);
 	//	fputs("Here... \n", stdout);
 		expect(rparen);
 	}
-	else if ( currTok == tilde )
+	else if ( currTok == tilde)
 	{
 		nextSym();
 		factor( ttp);
 	}
-	else if ( currTok == lcurly )
+	else if ( currTok == lcurly)
 	{
 		nextSym();
 		set();
