@@ -1343,9 +1343,11 @@ void type ( int* ttp)
 //	SimplExp -> [ + | - ] term [ addop term ]
 void SimplExpr ( int* ttp)
 {
+	Token addop;
+	int ttp1;
 	if ( currTok == plus | currTok == minus )
 	{
-		Token addop = currTok;
+		addop = currTok;
 		nextSym();
 		checktypes( *ttp, inttyp);
 		if (addop == minus)
@@ -1358,8 +1360,30 @@ void SimplExpr ( int* ttp)
 	// addop -> + | - | OR
 	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
+		if( currTok == OR_SYM)
+		{
+			checktypes( *ttp, booltyp);
+		}
+		else
+		{
+			checktypes( *ttp, inttyp);
+		}
+		addop = currTok;
 		nextSym();
-		term( ttp);
+		term( &ttp1);
+		checktypes( *ttp, ttp1);
+		switch( addop)
+		{
+			case plus:
+				gencode( opr, 0, 3);
+				break;
+			case minus:
+				gencode( opr, 0, 4);
+				break;
+			case OR_SYM:
+				gencode( opr, 0, 14);
+				break;
+		}
 	}
 
 }
@@ -1367,16 +1391,41 @@ void SimplExpr ( int* ttp)
 //	expr -> SimplExpr [ relop SimplExp ]
 void expr ( int* ttp)
 {
+	Token relop;
+	int ttp1;
 	fputs("This is expr\n", stdout);
 	SimplExpr( ttp);
-	fputs("Done expr\n", stdout);
 	
 	//	relop -> = | # | < | <= | >= | IN | IS
 	if( currTok == equal | currTok == notEqual | currTok == lt | currTok == lte | currTok == gt | currTok == gte | currTok == IN_SYM | currTok == IS_SYM )
 	{
+		relop = currTok;
 		nextSym();
 		SimplExpr( ttp);
+		checktypes( *ttp, ttp1);
+		switch( relop)
+		{
+			case equal:
+				gencode( opr, 0,  8);
+				break;
+			case notEqual:
+				gencode( opr, 0,  9);
+				break;
+			case lt:
+				gencode( opr, 0, 10);
+				break;
+			case lte:
+				gencode( opr, 0, 11);
+				break;
+			case gt:
+				gencode( opr, 0, 12);
+				break;
+			case gte:
+				gencode( opr, 0, 13);
+				break;
+		}
 	}
+	fputs("Done expr\n", stdout);
 }
 
 //	ActParams -> '(' [ ExprList ] ')'
@@ -1521,13 +1570,43 @@ void factor( int* ttp)
 //	term -> factor { mulop factor }
 void term( int* ttp)
 {
+	Token mulop;
+	int ttp1;
 	fputs("This is term \n", stdout);
 	factor( ttp);
 	
 	//	mulop -> * | / | DIV | MOD | &
 	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
 	{
-		factor( ttp);
+		if ( currTok == AND_SYM)
+		{
+			checktypes( booltyp, *ttp);
+		}
+		else
+		{
+			checktypes( inttyp, *ttp);
+		}
+		mulop = currTok;
+		nextSym();							// was missing before now, I guess
+											// it never came up before
+		factor( &ttp1);
+		checktypes( *ttp, ttp1);
+		switch( mulop)
+		{
+			case mul:
+				gencode( opr, 0, 5);
+				break;
+			case slash:						// slash and div are both divs
+			case DIV_SYM:
+				gencode( opr, 0, 6);
+				break;
+			case MOD_SYM:
+				gencode( opr, 0, 7);
+				break;
+			case AND_SYM:
+				gencode( opr, 0, 15);
+				break;
+		}
 	}
 	fputs("Done term\n", stdout);
 }
@@ -1679,7 +1758,7 @@ void caseP ( int displ)
 	CaseStat -> CASE expr OF 
 				case { '|' case } END
 */
-void CaseStat ( int displ)
+void CaseStat ( int displ)			// TODO: do casestat
 {
 	fputs("This is CaseStat\n", stdout);
 	int ttp;
@@ -1729,20 +1808,34 @@ void WhileStat( int displ)
 */	
 void ForStat(int displ)
 {
-	int ttp1, ttp2;
+	int ttp1, ttp2, savlc1, savlc2, lcvptr;
 	fputs("Start ForStat\n", stdout);
-	expect(ident);
+	if ( currTok == ident)
+	{
+		searchid( currWord, &lcvptr);
+		gencode( psha, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+		nextSym();
+	}
+	else
+	{
+		error( 34);
+	}
 	expect(assign);
 	expr( &ttp1);
 	expect(TO_SYM);
 	expr( &ttp2);
-	if (currTok == BY_SYM)
+	if (currTok == BY_SYM)		// TODO: ignoring by for now
 	{
 		nextSym();
 		expr( &ttp1);
 	}
 	expect(DO_SYM);
+	savlc1 = lc;
+	gencode( for0, 0, 0);		// gencode( for0, f, 0);
+	savlc2 = lc;
 	StatSeq( displ);
+	gencode( for1, 0, savlc2);	// gencode( for1, f, savlc2);
+	code[ savlc1].ad = lc;
 	expect(END_SYM);
 	fputs("Done ForStat\n", stdout);
 }
