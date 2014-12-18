@@ -67,6 +67,7 @@ const int RESWORD_SIZE = 40;
 Token currTok;
 const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
 const int WORD_SIZE = 64;
+const int NUM_SIZE = 64;
 char currChar;
 char currLine [256];			// 256 character limit is arbitrary but sensible.
 								// should be pointer...?
@@ -77,7 +78,9 @@ int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
 								// and to be compared to a table of reserved words
 char currNum [64];      		// Simply saving the num so as to pass it on over later,
-								// if needed.
+int currInt = 0;				// if needed.
+int numCount = 0;
+
 int intval;						// value of the integer in currNum, if applicable
 int gotNewLine = 0;
 Token setTok;
@@ -656,22 +659,6 @@ void clrLine()
 	}
 }
 
-//	*
-//	Get a line and put it in currLine.
-//
-void getLineLegacy()
-{
-	clrLine();
-	fgets(currLine, BUFF_SIZE, toScan);
-	if (feof(toScan)) 
-	{
-		//eofParsed = 1;
-		fputs("END OF FILE REACHED.", stdout);
-	}
-	lineNo ++;
-
-}
-
 void getLine()
 {
 	clrLine();
@@ -784,13 +771,33 @@ void dealWithComment()
 	getChar();
 }
 
+
+void toNum() 
+{
+	int i;
+	for( i = 0; i < numCount; i++ )
+	{
+		currInt = currInt * 10 + (currNum[i] - '0' );
+	}
+}
+
+void getNum ( char c )
+{
+	currNum[ numCount ] = c;
+	numCount++;
+}
+	
 void scanNum()
 {
+	
 	while( isDigit(currChar) )
 	{
+		getNum(currChar);
 		getChar();
 	}
 
+	toNum();
+	
 	if (currChar == '.' && currLine[inptr] != '.') // need addtional lookahead for range op
 	{
 		
