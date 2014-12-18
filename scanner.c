@@ -4,6 +4,7 @@
 
 /*			TODO LIST
 		-> make fatal errors fatal (i.e. ctrl-find F_ERROR and add exit statement)
+		-> I MAKE TO EDIT
 */
 
 #include <stdio.h>		// need for file io
