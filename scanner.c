@@ -81,7 +81,6 @@ char currNum [64];      		// Simply saving the num so as to pass it on over late
 int currInt = 0;				// if needed.
 int numCount = 0;
 
-int intval;						// value of the integer in currNum, if applicable
 int gotNewLine = 0;
 Token setTok;
 //int eofParsed = 0;
@@ -188,19 +187,6 @@ struct typerec				// type struct
 	TypeForm form;			// type type
 };
 
-union constkind
-{
-	int intkind;
-	int boolkind;
-	int charkind;
-	double realkind;
-};
-
-struct constrec
-{
-	union constkind constkind;
-};
-
 struct paramstruct
 {
 	int varparam;
@@ -217,9 +203,10 @@ struct varstruct
 	int varaddr;
 };
 
-struct conststruct
+union conststruct
 {
-	struct constrec constval;
+	int i;
+	double r;
 };
 
 struct procstruct
@@ -239,7 +226,7 @@ union classData
 	struct paramstruct pa;
 	struct typstruct t;
 	struct varstruct v;
-	struct conststruct c;
+	union conststruct c;
 	struct procstruct pr;
 	struct stdprocstruct s;
 };
@@ -1540,19 +1527,21 @@ void set()
 */
 void factor( int* ttp)
 {
+	fputs("This is factor\n", stdout);
+
 	int stp;
-	/*
 
 	switch ( currTok)
 	{
-		case integer:					// int const
-			ttp = inttyp;
-			gencode( pshc, 0, intval);
+										// TODO: distinguish between real & int
+		case number:					// int const
+			*ttp = inttyp;
+			gencode( pshc, 0, currInt);
 			nextSym();
 			break;
-		case real:						// real const
-			nextSym();
-			break;
+		// case real:						// real const
+		// 	nextSym();
+		// 	break;
 		case string:
 			nextSym();
 			break;
@@ -1573,19 +1562,36 @@ void factor( int* ttp)
 			}
 			else
 			{
-				ttp = idtyp;
+				*ttp = symtab[ stp].idtyp;
 				switch( symtab[ stp].class)
 				{
 					case constcls:
+						gencode( pshc, 0, symtab[ stp].classData.c.i);
+						nextSym();
 						break;
 					case varcls:
+						gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+						nextSym();
 						break;
 					case paramcls:
+						if ( symtab[ stp].classData.pa.varparam == 1)
+							gencode( pshi, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+						else
+							gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+						nextSym();
 						break;
-					case proccls:
+					case proccls:				// this would be a proc call ??
+						nextSym();
+
+						if( currTok == lparen)// && symtab[ stp].classData.pr.lastparam != 0)
+						{
+							nextSym();
+							ActParams();
+						}
 						break;
-					case stdfcls:
-						break;
+					// case stdfcls:			// TODO: Maybe deal with this
+					// 	nextSym();				//       separately
+					// 	break;
 				}
 			}
 			break;
@@ -1604,45 +1610,8 @@ void factor( int* ttp)
 			break;
 	}
 
-	*/
-
-	fputs("This is factor\n", stdout);
-	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM)
-	{
-		// Here we need to distringuish between integer or real, since
-		// num -> integer | real
-
-		nextSym();
-	}
-	else if ( currTok == ident)
-	{
-		//fputs("Why not here??\n", stdout);
-		designator();
-		if( currTok == lparen)
-		{
-			nextSym();
-			ActParams();
-		}
-	
-	}
-	else if ( currTok == lparen)
-	{
-		nextSym();
-		expr( ttp);
-	//	fputs("Here... \n", stdout);
-		expect(rparen);
-	}
-	else if ( currTok == tilde)
-	{
-		nextSym();
-		factor( ttp);
-	}
-	else if ( currTok == lcurly)
-	{
-		nextSym();
-		set();
-	}
 	fputs("Done factor\n", stdout);
+	
 }
 
 //	term -> factor { mulop factor }
@@ -1717,14 +1686,10 @@ void AssignStat (int stp)
 			gencode(pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 			break;
 		case paramcls:
-			if ( paramcls == symtab[ stp].classData.pa.varparam)
-			{
+			if ( symtab[ stp].classData.pa.varparam)
 				gencode( popi, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
-			}
 			else
-			{
 				gencode( pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
-			}
 			break;
 	}
 
@@ -1935,7 +1900,7 @@ void stat ( displ)
 	// ASSIGNSTAT or PROCCALL
 	else if ( currTok == ident )
 	{
-		searchid(currWord, &stptr);
+		searchid(currWord, &stp);
 		designator();
 
 		if( currTok == assign)
@@ -1986,19 +1951,41 @@ void stat ( displ)
 void FormParams ()
 {
 	fputs("This is FormParams\n", stdout);
+	int isVar = 0;
+	int paramptr;
 	
 	//	FormParamSect -> [ VAR ] ident { , ident } : FormType
 	if ( currTok == VAR_SYM | currTok == ident )
 	{
 		if(currTok == VAR_SYM)
+		{
+			isVar = 1;	
 			nextSym();
+		}
 
-		expect(ident);
+		if( currTok == ident)
+		{
+			insertid( currWord, paramcls);
+			paramptr = stptr;
+			nextSym();
+		}
+		else
+		{
+			error( 5);
+		}
 
 		while (currTok == comma)
 		{
 			nextSym();
-			expect(ident);
+			if( currTok == ident)
+			{
+				insertid( currWord, paramcls);
+				nextSym();
+			}
+			else
+			{
+				error( 5);
+			}
 		}
 
 		expect(colon);
@@ -2040,11 +2027,25 @@ void FormParams ()
 
 	}
 
-	expect(rparen);
-	if ( currTok == colon)
+	expect(rparen);					
+	if ( currTok == colon)			// return type of procedure
 	{
 		nextSym();
+		int stp, ttpR;
+		if ( currTok == ident)
+		{
+			searchid( currWord, &stp);
+			if( symtab[ stp].class == typcls)
+			{
+				// symtab[ procptr].idtyp := symtab[ stp]. idtyp;
+    			// symtab[ resvarptr].idtyp := symtab[ stp]. idtyp;
+			}
+		}
+
 		qualident();
+		// symtab[ procptr].idtyp = ttpR;
+		// symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
+		printsymtab();
 	}
 
 	fputs("End FormParams\n", stdout);
@@ -2154,22 +2155,39 @@ void ProcDecl ()
 {
 	fputs("Start ProcDecl\n", stdout);
 	int displ = -2;							// displacement for param addr
+	int stp, procptr, resvarptr;
 
 	/* 
 		ProcHead -> PROCEDURE identdef [ FormParams ]
 		identdef -> ident [ * ]
 	*/
-	expect(ident);
-	if(currTok == mul)
+	
+	if( currTok == ident)
+	{
+		insertid( currWord, proccls);
+		procptr = stptr;
+		nextSym();
+		printsymtab();
+	}
+	else
+	{
+		error( 4);
+	}
+
+	if( currTok == mul)
 		nextSym();
 	
 	enterScope();
 
-	
 	if(currTok == lparen)
 	{
 		nextSym();
 		FormParams();
+	}
+	else
+	{
+		// no param list
+		symtab[ procptr].classData.pr.lastparam = 0;
 	}
 		
 	expect(SEMIC);
@@ -2188,6 +2206,9 @@ void ProcDecl ()
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
+		// symtab[ procptr].idtyp = ttpR;
+		// symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
+		// printsymtab();
 	}
 	expect(END_SYM);
 	expect(ident);
@@ -2424,3 +2445,49 @@ void Module ()
 
 
 
+
+
+
+
+
+
+
+/* LEGACY CODE */
+
+	/*		OLD FACTOR
+	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM)
+	{
+		// Here we need to distringuish between integer or real, since
+		// num -> integer | real
+
+		nextSym();
+	}
+	else if ( currTok == ident)
+	{
+		//fputs("Why not here??\n", stdout);
+		designator();
+		if( currTok == lparen)
+		{
+			nextSym();
+			ActParams();
+		}
+	
+	}
+	else if ( currTok == lparen)
+	{
+		nextSym();
+		expr( ttp);
+	//	fputs("Here... \n", stdout);
+		expect(rparen);
+	}
+	else if ( currTok == tilde)
+	{
+		nextSym();
+		factor( ttp);
+	}
+	else if ( currTok == lcurly)
+	{
+		nextSym();
+		set();
+	}
+	*/
