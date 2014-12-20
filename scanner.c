@@ -1948,11 +1948,11 @@ void stat ( displ)
 }
 
 //	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'
-void FormParams ()
+void FormParams ( int procptr)
 {
 	fputs("This is FormParams\n", stdout);
 	int isVar = 0;
-	int paramptr;
+	int paramptr, stp, paramtyp;
 	
 	//	FormParamSect -> [ VAR ] ident { , ident } : FormType
 	if ( currTok == VAR_SYM | currTok == ident )
@@ -1966,7 +1966,7 @@ void FormParams ()
 		if( currTok == ident)
 		{
 			insertid( currWord, paramcls);
-			paramptr = stptr;
+			paramptr = stptr;					// save ptr to first param
 			nextSym();
 		}
 		else
@@ -1996,21 +1996,66 @@ void FormParams ()
 			nextSym();
 			expect(OF_SYM);
 		}	
-		qualident();
+		// qualident();								// ignoring qualified ident
+													// just going to use ident
+		if ( currTok == ident)
+		{
+			searchid( currWord, &stp);
+			if ( symtab[ stp].class != typcls)
+			{
+				error( 41);
+			}
+			else
+			{
+				paramtyp = symtab[ stp].idtyp;
+			}
+			nextSym();
+		}
+
+		// set types
+		while ( paramptr <= stptr)
+		{
+			symtab[ paramptr].idtyp = paramtyp;
+			symtab[ paramptr].classData.pa.varparam = isVar;
+			paramptr++;
+		}
 
 		// { ; FormParamSect }
 		while ( currTok == SEMIC )
 		{
 			nextSym();
+			isVar = 0;
 			if(currTok == VAR_SYM)
+			{
+				isVar = 1;
 				nextSym();
+			}
 
-			expect(ident);
+			if( currTok == ident)
+			{
+				insertid( currWord, paramcls);
+				paramptr = stptr;					// save ptr to first param
+				nextSym();
+			}
+			else
+			{
+				error( 5);
+			}
 
 			while (currTok == comma)
 			{
 				nextSym();
-				expect(ident);
+
+				if( currTok == ident)
+				{
+					insertid( currWord, paramcls);
+					nextSym();
+				}
+				else
+				{
+					error( 5);
+				}
+
 			}
 
 			expect(colon);
@@ -2021,7 +2066,29 @@ void FormParams ()
 				nextSym();
 				expect(OF_SYM);
 			}	
-			qualident();
+			// qualident();								// ignoring qualified ident
+														// just going to use ident
+			if ( currTok == ident)
+			{
+				searchid( currWord, &stp);
+				if ( symtab[ stp].class != typcls)
+				{
+					error( 41);
+				}
+				else
+				{
+					paramtyp = symtab[ stp].idtyp;
+				}
+				nextSym();
+			}
+
+			// set types
+			while ( paramptr <= stptr)
+			{
+				symtab[ paramptr].idtyp = paramtyp;
+				symtab[ paramptr].classData.pa.varparam = isVar;
+				paramptr++;
+			}
 			
 		}
 
@@ -2037,8 +2104,11 @@ void FormParams ()
 			searchid( currWord, &stp);
 			if( symtab[ stp].class == typcls)
 			{
-				// symtab[ procptr].idtyp := symtab[ stp]. idtyp;
-    			// symtab[ resvarptr].idtyp := symtab[ stp]. idtyp;
+				symtab[ procptr].idtyp = symtab[ stp]. idtyp;
+			}
+			else
+			{
+				error( 34);
 			}
 		}
 
@@ -2145,7 +2215,7 @@ void StrucType ()
 		nextSym();
 		if(currTok == lparen)
 			nextSym();
-			FormParams();
+			FormParams( 0);				// TODO: Dummy value currently
 	}
 	fputs("Done StrucType\n", stdout);
 }
@@ -2182,7 +2252,7 @@ void ProcDecl ()
 	if(currTok == lparen)
 	{
 		nextSym();
-		FormParams();
+		FormParams( procptr);
 	}
 	else
 	{
