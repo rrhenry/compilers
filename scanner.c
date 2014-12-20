@@ -2504,7 +2504,14 @@ void Module ()
 
 
 
-
+void listcode ( int savlc )
+{
+	int ilc;
+	for ( ilc = savlc ; ilc <= lc-1 ; ilc++ )
+	{
+		printf( "%5d: %5s %3d %5d", ilc, *mnemonic[ code[ilc].op ], code[ilc].ld, code[ilc].ad);
+	}
+}
 
 
 
