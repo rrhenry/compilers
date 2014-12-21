@@ -77,9 +77,12 @@ int count = 0;					// Global counter for current line position
 int lineNo = 0;
 char currWord [64];				// Word being worked on. Delimited by found whitespaces 
 								// and to be compared to a table of reserved words
-char currNum [64];      		// Simply saving the num so as to pass it on over later,
-int currInt = 0;				// if needed.
+
+char currNum [64];      		// Current number being read.
+int currInt = 0;				// Needed for output and also codegen.	
 int numCount = 0;
+
+char qualBuff[64];
 
 int gotNewLine = 0;
 Token setTok;
@@ -1318,18 +1321,53 @@ void expect (Token t)
 	nextSym();
 }
 
+void clrQualBuff ()
+{
+	int i;
+	for ( i = 0; i < WORD_SIZE; i++ )
+	{
+		qualBuff[i] = '\0';
+	}
+}
 
 //	qualident -> [ ident . ] ident
 void qualident()
 {
 	fputs("This is a qualident\n", stdout);
 	expect(ident);
-	if(currTok == period)
+	
+	clrQualBuff();
+	int i;
+	int qualCount = 0;
+	for ( i = 0 ; i < WORD_SIZE ; i++ )
 	{
-		nextSym();
-		expect(ident);
+		if(currWord[i] != '\0')
+		{
+			qualBuff[i] = currWord[i];
+			qualCount++;
+		}
+
 	}
 	
+	if( currTok == period )
+	{
+		qualBuff[qualCount] = '.';
+		qualCount++;
+		
+		nextSym();
+		expect(ident);
+		
+		int j;
+		for ( j = 0 ; j < WORD_SIZE ; j++ )
+		{
+			if(currWord[j] != '\0')
+			{
+				qualBuff[qualCount] = currWord[j];
+				qualCount++;
+			}
+
+		}
+	}
 	fputs("Done qualident.\n", stdout);
 }
 
