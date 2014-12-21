@@ -301,6 +301,15 @@ void gencode( Opcode o, int l, int a)
 	}
 }
 
+void listcode ( int savlc )
+{
+	int ilc;
+	for ( ilc = savlc ; ilc <= lc-1 ; ilc++ )
+	{
+		printf( "%5d: %5s %3d %5d", ilc, *mnemonic[ code[ilc].op ], code[ilc].ld, code[ilc].ad);
+	}
+}
+
 void enterstdident ( char id [], IdClass cls, int ttp)
 {
 	stptr ++;
@@ -2513,31 +2522,6 @@ void Module ()
 
 	fputs("Reached the end of Module", stdout);
 }
-
-
-
-void listcode ( int savlc )
-{
-	int ilc;
-	for ( ilc = savlc ; ilc <= lc-1 ; ilc++ )
-	{
-		printf( "%5d: %5s %3d %5d", ilc, *mnemonic[ code[ilc].op ], code[ilc].ld, code[ilc].ad);
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
