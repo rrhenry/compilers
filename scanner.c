@@ -1426,7 +1426,7 @@ void expr ( int* ttp)
 
 //	ActParams -> '(' [ ExprList ] ')'
 //	ExprList -> expr {, expr } 
-void ActParams ()
+void ActParams ( int procptr, int* paramlen)
 {
 	fputs("This is ActParams\n", stdout);
 	int ttp;
@@ -1580,14 +1580,22 @@ void factor( int* ttp)
 							gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 						nextSym();
 						break;
-					case proccls:				// this would be a proc call ??
+					case proccls:				// this would be a proc call ?? YES :)
+						gencode( pshc, 0, 0);
+						int paramlen = 0;
 						nextSym();
+
+						// pfcall
 
 						if( currTok == lparen)// && symtab[ stp].classData.pr.lastparam != 0)
 						{
 							nextSym();
-							ActParams();
+							ActParams( stp, &paramlen);
 						}
+						// else paramlen = 0
+
+						gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
+						gencode( isp, 0, -paramlen);
 						break;
 					// case stdfcls:			// TODO: Maybe deal with this
 					// 	nextSym();				//       separately
@@ -1691,6 +1699,9 @@ void AssignStat (int stp)
 			else
 				gencode( pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 			break;
+		case proccls:
+			gencode( pop, currlev - (symtab[ stp].idlev + 1), symtab[ stp].classData.pr.resultaddr);	// pop return value
+			break;
 	}
 
 	fputs("Done AssignStat\n", stdout);
@@ -1703,7 +1714,7 @@ void RepeatStat ( int displ)
 	int ttp, savlc;
 	savlc = lc;									// save location for later jump
 	StatSeq( displ);
-	if ( currTok	== UNTIL_SYM)
+	if ( currTok == UNTIL_SYM)
 	{
 		nextSym();
 		expr( &ttp);
@@ -1901,6 +1912,7 @@ void stat ( displ)
 	else if ( currTok == ident )
 	{
 		searchid(currWord, &stp);
+		int paramlen = 0;
 		designator();
 
 		if( currTok == assign)
@@ -1908,12 +1920,14 @@ void stat ( displ)
 			nextSym();
 			AssignStat( stp);
 		}
-		//	ProcCall -> designator [ ActParams ]
-		else if( currTok == lparen )
+		else if( currTok == lparen ) //	ProcCall -> designator [ ActParams ]
 		{
 			nextSym();
-			ActParams();
+			ActParams( stp, &paramlen);
 		}	
+
+		gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
+		gencode( isp, 0, -paramlen);
 		
 	}
 	// IFSTAT
@@ -1948,7 +1962,7 @@ void stat ( displ)
 }
 
 //	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'
-void FormParams ( int procptr)
+void FormParams ( int procptr, int displ)
 {
 	fputs("This is FormParams\n", stdout);
 	int isVar = 0;
@@ -2114,7 +2128,7 @@ void FormParams ( int procptr)
 
 		qualident();
 		// symtab[ procptr].idtyp = ttpR;
-		// symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
+		symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
 		printsymtab();
 	}
 
@@ -2192,12 +2206,11 @@ void StrucType ()
 	*/
 	else if(currTok == ARRAY_SYM)
 	{
-		
 		do
 		{
 			nextSym();
 			expr( &ttp);
-		}while(currTok == comma);
+		} while(currTok == comma);
 
 		expect(OF_SYM);
 		type( &ttp);
@@ -2215,7 +2228,7 @@ void StrucType ()
 		nextSym();
 		if(currTok == lparen)
 			nextSym();
-			FormParams( 0);				// TODO: Dummy value currently
+			FormParams( 0, 0);				// TODO: Dummy value currently
 	}
 	fputs("Done StrucType\n", stdout);
 }
@@ -2225,7 +2238,7 @@ void ProcDecl ()
 {
 	fputs("Start ProcDecl\n", stdout);
 	int displ = -2;							// displacement for param addr
-	int stp, procptr, resvarptr;
+	int stp, procptr;
 
 	/* 
 		ProcHead -> PROCEDURE identdef [ FormParams ]
@@ -2252,7 +2265,8 @@ void ProcDecl ()
 	if(currTok == lparen)
 	{
 		nextSym();
-		FormParams( procptr);
+		FormParams( procptr, displ);
+		// FormParams handles rparen
 	}
 	else
 	{
@@ -2269,6 +2283,7 @@ void ProcDecl ()
 	{
 		nextSym();
 		StatSeq( displ);
+		gencode( opr, 0, 1);			// return
 	}
 	
 	if(currTok == RETURN_SYM)
@@ -2276,9 +2291,6 @@ void ProcDecl ()
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
-		// symtab[ procptr].idtyp = ttpR;
-		// symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
-		// printsymtab();
 	}
 	expect(END_SYM);
 	expect(ident);
@@ -2478,7 +2490,7 @@ void Module ()
 		StatSeq( displ);
 	}
 		
-
+	gencode( opr, 0, 0);
 	expect(END_SYM);
 	expect(ident);
 	if( currTok != period )
