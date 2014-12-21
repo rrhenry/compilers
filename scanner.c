@@ -86,6 +86,7 @@ Token setTok;
 //int eofParsed = 0;
 
 FILE *toScan;
+FILE *codeOut;
 
 /* BEGIN: String processing methods */
 
@@ -306,7 +307,7 @@ void listcode ( int savlc )
 	int ilc;
 	for ( ilc = savlc ; ilc <= lc-1 ; ilc++ )
 	{
-		printf( "%5d: %5s %3d %5d", ilc, *mnemonic[ code[ilc].op ], code[ilc].ld, code[ilc].ad);
+		fprintf( codeOut, "%5d: %5s %3d %5d\n", ilc, *mnemonic[ code[ilc].op ], code[ilc].ld, code[ilc].ad);
 	}
 }
 
@@ -333,7 +334,7 @@ void searchid( char id [16], int* stp)
 
 		while ( strcmpis(symtab[ *stp].name, id) != 0)
 		{
-			printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
+			//printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
 			*stp = symtab[ *stp].previd;
 			// if( strcmp(symtab[ *stp].name, id) == 0)
 			// {
@@ -1260,16 +1261,27 @@ void scan()
 
 int main( int argc, char *argv[] )
 {	
-	if ( argc == 2)		// we need 1 file to open, specified on command line, so 2 command line args
+	int numArgs = 3;
+	if ( argc == numArgs)		// we need 1 file to open, specified on command line, so 2 command line args
 	{
 		toScan = fopen(argv[1], "r");		// assume second value is toParse file name
+		codeOut = fopen(argv[2], "w");
 
 		if (toScan != NULL)
 		{
 			scan();
 		}
 
+		if (codeOut != NULL)
+		{
+			listcode( 0);
+		}
+
 		fclose(toScan);
+	}
+	else
+	{
+		printf("\nError: %d arguments expected, %d provided.\n", numArgs, argc);
 	}
 
 	return 0;
@@ -1348,6 +1360,7 @@ void type ( int* ttp)
 //	SimplExp -> [ + | - ] term [ addop term ]
 void SimplExpr ( int* ttp)
 {
+	printf("Entering SimplExpr\n");
 	Token addop;
 	int ttp1;
 	if ( currTok == plus | currTok == minus )
@@ -1390,6 +1403,7 @@ void SimplExpr ( int* ttp)
 				break;
 		}
 	}
+	printf("Exiting SimplExpr.\n");
 
 }
 
@@ -1406,7 +1420,7 @@ void expr ( int* ttp)
 	{
 		relop = currTok;
 		nextSym();
-		SimplExpr( ttp);
+		SimplExpr( &ttp1);
 		checktypes( *ttp, ttp1);
 		switch( relop)
 		{
@@ -1429,6 +1443,7 @@ void expr ( int* ttp)
 				gencode( opr, 0, 13);
 				break;
 		}
+		*ttp = booltyp;
 	}
 	fputs("Done expr\n", stdout);
 }
@@ -1440,11 +1455,13 @@ void ActParams ( int procptr, int* paramlen)
 	fputs("This is ActParams\n", stdout);
 	int ttp;
 	expr( &ttp);
+	*paramlen = 1;
 //	fputs("HERE?\n", stdout);
 	while ( currTok == comma )
 	{
 		nextSym();
 		expr( &ttp);
+		*paramlen++;
 	}
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
@@ -1587,6 +1604,10 @@ void factor( int* ttp)
 							gencode( pshi, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 						else
 							gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+						printf( "----------------\n");
+						printf( " Pushed push, %d, %d\n", currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);					
+						printf( " currlev: %d idlev: %d addr: %d\n", currlev, symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+						printf( "----------------\n");
 						nextSym();
 						break;
 					case proccls:				// this would be a proc call ?? YES :)
@@ -1917,8 +1938,7 @@ void stat ( displ)
 	{
 		RepeatStat( displ);
 	} 
-	// ASSIGNSTAT or PROCCALL
-	else if ( currTok == ident )
+	else if ( currTok == ident )	// ASSIGNSTAT or PROCCALL
 	{
 		searchid(currWord, &stp);
 		int paramlen = 0;
@@ -1933,36 +1953,31 @@ void stat ( displ)
 		{
 			nextSym();
 			ActParams( stp, &paramlen);
+			gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
+			gencode( isp, 0, -paramlen);			
 		}	
-
-		gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
-		gencode( isp, 0, -paramlen);
 		
 	}
-	// IFSTAT
-	else if ( currTok == IF_SYM)
+	else if ( currTok == IF_SYM)	// IFSTAT
 	{
 		nextSym();
 		IfStat( displ);
 		
 	}
-	// CASESTAT
-	else if ( currTok == CASE_SYM )
+	else if ( currTok == CASE_SYM )	// CASESTAT
 	{
 		nextSym();
 		CaseStat( displ);
 			
 	}	
-	// WHILESTAT
-	else if ( currTok == WHILE_SYM )
+	else if ( currTok == WHILE_SYM )	// WHILESTAT	
 	{
 		fputs("This is whileSYM\n", stdout);
 		nextSym();
 		WhileStat( displ);
 		
 	} 
-	// FORSTAT
-	else if ( currTok == FOR_SYM)
+	else if ( currTok == FOR_SYM) 	// FORSTAT
 	{
 		nextSym();
 		ForStat( displ);
@@ -2114,6 +2129,21 @@ void FormParams ( int procptr, int displ)
 			}
 			
 		}
+
+		symtab[ procptr].classData.pr.lastparam = stptr;	// check if right
+
+		// param addr
+		int paptr = symtab[ procptr].classData.pr.lastparam;	// saved last param		
+		int pattp = 0;											// param ttptr
+
+		while ( paptr > procptr)
+		{
+			pattp = symtab[ paptr].idtyp;
+			displ = displ - typetab[ pattp].size;
+			symtab[ paptr].classData.pa.paramaddr = displ;
+			paptr --;
+		}
+
 
 	}
 
@@ -2482,7 +2512,7 @@ void Module ()
 	int displ = 1;							// initialize displacement
 	int savstptr = stptr;					// save entry point
 	int savlc = lc;
-	gencode( jmp, 0, 0);
+	gencode( jmp, 0, 0);					// back patched later
 
 	if(currTok == IMPORT_SYM)
 	{
@@ -2493,6 +2523,8 @@ void Module ()
 
 	DeclSeq( displ);
 
+	code[ savlc].ad = lc;
+	gencode( isp, 0, displ - 1);
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
