@@ -5,6 +5,7 @@
 /*			TODO LIST
 		-> make fatal errors fatal (i.e. ctrl-find F_ERROR and add exit statement)
 		-> I MAKE TO EDIT
+		-> Fix line numbers
 */
 
 #include <stdio.h>		// need for file io
@@ -84,7 +85,7 @@ int numCount = 0;
 
 char qualBuff[64];
 
-int gotNewLine = 0;
+int gotNewLine = 1;
 Token setTok;
 //int eofParsed = 0;
 
@@ -508,7 +509,7 @@ void printtyptab()
 	printf("       size  lastfld \n");
 
 	int i;
-	for ( i = 1; i < ttptr; i++)
+	for ( i = 1; i <= ttptr; i++)
 	{
 		printf("%4d:%6d %8d\n", i, typetab[ i].size, typetab[ i].form);
 	}
@@ -671,7 +672,7 @@ void clrLine()
 void getLine()
 {
 	clrLine();
-	lineNo ++;
+	//lineNo ++;
 
 	inptr = 0;
 	char theChar = getc(toScan);
@@ -935,6 +936,7 @@ void scanString()
 
 void writeSym()
 {
+
 	printf("%d", lineNo);
 	fputs(": ", stdout);
 	fputs("[", stdout);
@@ -956,10 +958,11 @@ void writeSym()
 
 	fputs("] \n", stdout);
 
-	if (gotNewLine == 1 && lineNo != 1)
+	if (gotNewLine == 1)
 	{
 		printf("\n");
 		gotNewLine = 0;
+		lineNo ++;
 	}
 }
 
@@ -1636,13 +1639,13 @@ void factor( int* ttp)
 			break;
 		case ident:
 			searchid( currWord, &stp);
-			//printf("qualBuff: %s\n", qualBuff);
 			if ( stp == 0)
 			{
 				error( 11);
 			}
 			else
 			{
+				printf("Looking at Ident in Factor. STP: %d \n", stp);
 				*ttp = symtab[ stp].idtyp;
 				switch( symtab[ stp].class)
 				{
@@ -1651,6 +1654,7 @@ void factor( int* ttp)
 						nextSym();
 						break;
 					case varcls:
+						printf("Varaddr is: %d\n", symtab[ stp].classData.v.varaddr);
 						gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 						nextSym();
 						break;
@@ -1768,7 +1772,6 @@ void StatSeq ( int displ)
 //	AssignStat -> designator := expr
 void AssignStat (int stp)
 {
-	fputs("This is AssignStat\n", stdout);
 	int ttp;
 	expr( &ttp);
 
@@ -1776,6 +1779,7 @@ void AssignStat (int stp)
 	switch (symtab[ stp].class)
 	{
 		case varcls:
+			printf("Here! stp: %d addr: %d -----------\n", stp, symtab[ stp].classData.v.varaddr);
 			gencode(pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 			break;
 		case paramcls:
@@ -1826,6 +1830,7 @@ void IfStat( int displ)
 	checktypes( ttp, booltyp);
 	expect(THEN_SYM);
 	savlc1 = lc;
+	gencode( jmpc, 0, 0);
 	StatSeq( displ);
 	savlc2 = lc;
 	gencode( jmp, 0, 0);
@@ -2433,7 +2438,7 @@ void ProcDecl ()
 
 
 	//	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END
-	DeclSeq();
+	DeclSeq( &displ);
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
@@ -2484,7 +2489,7 @@ void identList()
 			[ VAR { VarDecl ; } ]
 			{ ProcDecl ; }
 */
-void DeclSeq ( int displ)
+void DeclSeq ( int* displ)
 {
 	fputs("This is DeclSeq\n", stdout);
 
@@ -2583,10 +2588,10 @@ void DeclSeq ( int displ)
 		do
 		{
 			symtab[ stpv1].idtyp = ttpV;
+			symtab[ stpv1].classData.v.varaddr = *displ;
+			printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
+			*displ = *displ + typetab[ ttpV].size;
 			stpv1++;
-			symtab[ stpv1].classData.v.varaddr = displ;
-			displ = displ + typetab[ ttpV].size;
-
 		} while ( stpv1 <= stpv2 );
 
 		printsymtab();
@@ -2640,7 +2645,7 @@ void Module ()
 	}
 		
 
-	DeclSeq( displ);
+	DeclSeq( &displ);
 
 	code[ savlc].ad = lc;
 	gencode( isp, 0, displ - 1);

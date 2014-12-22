@@ -10,7 +10,7 @@ void type( int* ttp);
 void FormParams();
 void ImportList();
 void StrucType();
-void DeclSeq();
+void DeclSeq( int* displ);
 void Module();
 void ProcDecl();
 void StatSeq( int displ);
