@@ -106,16 +106,40 @@ char *strcopy(char *dst, const char *src)
    return saved;
 }
 	
+// kinda trasn
 int strcmpis( const char *s1, const char *s2)	// str cmp ignore space
 {
-	while (*s1 && *s2)				// while the null character is not reached
+	int len = 0;
+	// move up to last non whitespace character
+	while ( *s1++ != ' ' && *s2++ != ' ')
 	{
-		if (*s1++ != *s2++)			// if they are not equal
-		{
-			return 0;
-		}
+		if ( (*s1 == '\0' && *s2 != '\0') || (*s2 == '\0' && *s1 != '\0'))
+			return 0;	// since they are not of equal length
+		len ++;
 	}
+
+	// move back down through the string
+	while ( len-- > 0)	
+	{
+		if (*s1-- != *s2--)
+			return 0;
+	}
+
 	return 1;
+
+	// while ( *s1 && *s2)				// while the null character is not reached
+	// {
+	// 	if ( *s1++ != *s2++)			// if they are not equal
+	// 	{
+	// 		//if ( !(*s1 == ' ' || *s2 == ' '))
+	// 		//{
+	// 		//	printf("Failing on %c vs %c\n", *s1, *s2);
+	// 			return 0;
+	// 		//}
+	// 	}
+
+	// }
+	// return 1;
 }
 
 /* END:   String processing methods */
@@ -345,7 +369,7 @@ void searchid( char id [16], int* stp)
 	{
 		*stp = scopetab[ lev];
 
-		while ( strcmpis(symtab[ *stp].name, id) != 1)
+		while ( strcmp(symtab[ *stp].name, id))
 		{
 			//printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
 			*stp = symtab[ *stp].previd;
@@ -425,30 +449,30 @@ void initstdidents()
 {
 	int nstdidents = 24;
 	char *stdidents [24][16];
-	stdidents[  0][ 0] = "ABS            ";
-	stdidents[  1][ 0] = "CHAR           ";
-	stdidents[  2][ 0] = "FLT            ";
-	stdidents[  3][ 0] = "LSL            ";
-	stdidents[  4][ 0] = "REAL           ";
-	stdidents[  5][ 0] = "ASR            ";
-	stdidents[  6][ 0] = "CHR            ";
-	stdidents[  7][ 0] = "INC            ";
-	stdidents[  8][ 0] = "NEW            ";
-	stdidents[  9][ 0] = "ROR            ";
-	stdidents[ 10][ 0] = "ASSERT         ";
-	stdidents[ 11][ 0] = "DEC            ";
-	stdidents[ 12][ 0] = "INCL           ";
-	stdidents[ 13][ 0] = "ODD            ";
-	stdidents[ 14][ 0] = "SET            ";
-	stdidents[ 15][ 0] = "BOOLEAN        ";
-	stdidents[ 16][ 0] = "EXCL           ";
-	stdidents[ 17][ 0] = "INTEGER        ";
-	stdidents[ 18][ 0] = "ORD            ";
-	stdidents[ 19][ 0] = "UNPK           ";
-	stdidents[ 20][ 0] = "BYTE           ";
-	stdidents[ 21][ 0] = "FLOOR          ";
-	stdidents[ 22][ 0] = "LEN            ";
-	stdidents[ 23][ 0] = "PACK           ";
+	stdidents[  0][ 0] = "ABS";
+	stdidents[  1][ 0] = "CHAR";
+	stdidents[  2][ 0] = "FLT";
+	stdidents[  3][ 0] = "LSL";
+	stdidents[  4][ 0] = "REAL";
+	stdidents[  5][ 0] = "ASR";
+	stdidents[  6][ 0] = "CHR";
+	stdidents[  7][ 0] = "INC";
+	stdidents[  8][ 0] = "NEW";
+	stdidents[  9][ 0] = "ROR";
+	stdidents[ 10][ 0] = "ASSERT";
+	stdidents[ 11][ 0] = "DEC";
+	stdidents[ 12][ 0] = "INCL";
+	stdidents[ 13][ 0] = "ODD";
+	stdidents[ 14][ 0] = "SET";
+	stdidents[ 15][ 0] = "BOOLEAN";
+	stdidents[ 16][ 0] = "EXCL";
+	stdidents[ 17][ 0] = "INTEGER";
+	stdidents[ 18][ 0] = "ORD";
+	stdidents[ 19][ 0] = "UNPK";
+	stdidents[ 20][ 0] = "BYTE";
+	stdidents[ 21][ 0] = "FLOOR";
+	stdidents[ 22][ 0] = "LEN";
+	stdidents[ 23][ 0] = "PACK";
 
 	// enter std types into symbol table
 	enterstdident( stdidents[ 17][0], typcls, inttyp);		// integer
@@ -1430,6 +1454,7 @@ void SimplExpr ( int* ttp)
 			gencode( opr, 0, 2);
 		}
 	}
+
 	term( ttp);
 	
 	// addop -> + | - | OR
@@ -1470,6 +1495,7 @@ void expr ( int* ttp)
 	Token relop;
 	int ttp1;
 	fputs("This is expr\n", stdout);
+
 	SimplExpr( ttp);
 	
 	//	relop -> = | # | < | <= | >= | IN | IS
@@ -1510,16 +1536,97 @@ void expr ( int* ttp)
 void ActParams ( int procptr, int* paramlen)
 {
 	fputs("This is ActParams\n", stdout);
-	int ttp;
-	expr( &ttp);
-	*paramlen = 1;
-//	fputs("HERE?\n", stdout);
-	while ( currTok == comma )
+	int ttp, stp;
+
+	int nextparamptr = procptr + 1;
+
+	if ( symtab[ nextparamptr].classData.pa.varparam)
+	{
+		if ( currTok == ident)
+		{
+			searchid( currWord, &stp);
+			if ( stp != 0)
+			{
+				checktypes( symtab[ stp].idtyp, symtab[ nextparamptr].idtyp);
+				if ( symtab[ stp].class == varcls)
+				{
+					gencode( psha, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+					*paramlen = 1;
+				}
+				else if ( symtab[ stp].class == paramcls)
+				{
+					gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+					*paramlen = 1;
+				}
+				else
+				{
+					error ( 34);
+				}
+			}
+			else
+			{
+				error( 35);
+			}
+			nextSym();
+		}
+		else
+		{
+			error( 36);
+		}
+	}
+	else 		// value param
+	{
+		expr( &ttp);
+		*paramlen = 1;
+	}
+
+	while ( currTok	== comma)
 	{
 		nextSym();
-		expr( &ttp);
-		*paramlen++;
+		nextparamptr ++;
+
+		if( symtab[ nextparamptr].classData.pa.varparam)
+		{
+			if ( currTok == ident)
+			{
+				searchid( currWord, &stp);
+
+				if( stp != 0)
+				{
+					checktypes( symtab[ stp].idtyp, symtab[ nextparamptr].idtyp);
+					if ( symtab[ stp].class == varcls)
+					{
+						gencode( psha, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+						*paramlen ++;
+					}
+					else if ( symtab[ stp].class == paramcls)
+					{
+						gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+						*paramlen ++;
+					}
+					else
+					{
+						error ( 34);
+					}
+				}
+				else
+				{
+					error (35);
+				}
+				nextSym();
+			}
+			else
+			{
+				error( 36);
+			}
+		}
+		else 			// value param
+		{
+			expr( &ttp);
+			*paramlen ++;
+		}
 	}
+
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
 }
@@ -1614,6 +1721,7 @@ void factor( int* ttp)
 
 	int stp;
 
+
 	switch ( currTok)
 	{
 										// TODO: distinguish between real & int
@@ -1638,14 +1746,16 @@ void factor( int* ttp)
 			nextSym();
 			break;
 		case ident:
+			printf(" Ici! Ici! Factor-Ident! Avec %s! \n", currWord);
 			searchid( currWord, &stp);
+			printf(" currWord: %s vs symtab[ stp].name: %s\n", currWord, symtab[ stp].name);
 			if ( stp == 0)
 			{
 				error( 11);
 			}
 			else
 			{
-				printf("Looking at Ident in Factor. STP: %d \n", stp);
+				printf("Looking at Ident in Factor. STP: %d Name: %s \n", stp, symtab[ stp].name);
 				*ttp = symtab[ stp].idtyp;
 				switch( symtab[ stp].class)
 				{
@@ -1654,7 +1764,6 @@ void factor( int* ttp)
 						nextSym();
 						break;
 					case varcls:
-						printf("Varaddr is: %d\n", symtab[ stp].classData.v.varaddr);
 						gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 						nextSym();
 						break;
@@ -1663,10 +1772,6 @@ void factor( int* ttp)
 							gencode( pshi, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 						else
 							gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
-						printf( "----------------\n");
-						printf( " Pushed push, %d, %d\n", currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);					
-						printf( " currlev: %d idlev: %d addr: %d\n", currlev, symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
-						printf( "----------------\n");
 						nextSym();
 						break;
 					case proccls:				// this would be a proc call ?? YES :)
@@ -1675,14 +1780,14 @@ void factor( int* ttp)
 						nextSym();
 
 						// pfcall
-
 						if( currTok == lparen)// && symtab[ stp].classData.pr.lastparam != 0)
 						{
+							printf(" Reached! Uh oh...\n");
 							nextSym();
 							ActParams( stp, &paramlen);
 						}
 						// else paramlen = 0
-
+						printf(" =================== JSR Printed ===================\n");
 						gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
 						gencode( isp, 0, -paramlen);
 						break;
@@ -2008,8 +2113,9 @@ void stat ( displ)
 		printf("qualBuff: %s\n", qualBuff);
 		// Out. and In. are in qualBuff
 
-		if ( strcmpis( qualBuff, "Out.Int") == 1)			// writeInt
-		{
+		if ( strcmp( qualBuff, "Out.Int") == 0)
+		{	// writeInt
+			printf("Why am I here?\n");
 			expect( lparen);
 
 			expr( &ttp);
@@ -2024,8 +2130,8 @@ void stat ( displ)
 
 			expect( rparen);
 		}
-		else if ( strcmpis( qualBuff, "In.Int") == 1)		// readInt
-		{
+		else if ( strcmp( qualBuff, "In.Int") == 0)
+		{	// readInt
 			// takes a single argument
 			expect(lparen);
 			printsymtab();
@@ -2055,8 +2161,8 @@ void stat ( displ)
 			nextSym();
 			expect(rparen);
 		}	
-		else if ( strcmpis( qualBuff, "Out.Ln") == 1)		// write newline
-		{
+		else if ( strcmp( qualBuff, "Out.Ln") == 0)		
+		{	// write newline
 
 			nextSym();
 
@@ -2065,13 +2171,16 @@ void stat ( displ)
 		{
 			if( currTok == assign)
 			{
+				printf("Here....\n");
 				nextSym();
 				AssignStat( stp);
 			}
 			else if( currTok == lparen ) //	ProcCall -> designator [ ActParams ]
 			{
 				nextSym();
+				printf(" == Entering ACTPARAMS from STAT because lol?\n");
 				ActParams( stp, &paramlen);
+				printf(" =========================== JSR Printed in STAT =========================\n");
 				gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
 				gencode( isp, 0, -paramlen);			
 			}	
@@ -2286,8 +2395,7 @@ void FormParams ( int procptr, int displ)
 		}
 
 		qualident();
-		// symtab[ procptr].idtyp = ttpR;
-		symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
+		//symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
 		printsymtab();
 	}
 
@@ -2435,23 +2543,28 @@ void ProcDecl ()
 	}
 		
 	expect(SEMIC);
-
+	displ = 1;				// reset displ for use in the code
 
 	//	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END
 	DeclSeq( &displ);
+	symtab[ procptr].classData.pr.paddr = lc;
+	gencode( isp, 0, displ - 1);
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
 		StatSeq( displ);
-		gencode( opr, 0, 1);			// return
 	}
 	
+	symtab[ procptr].classData.pr.resultaddr = displ - typetab[ symtab[ procptr].idtyp].size;
+
 	if(currTok == RETURN_SYM)
 	{	
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
 	}
+	gencode( opr, 0, 1);			// return
+
 	expect(END_SYM);
 	expect(ident);
 	exitScope();
@@ -2719,4 +2832,19 @@ void Module ()
 		nextSym();
 		set();
 	}
+
+	ACT PARAMS
+
+	expr( &ttp);
+	*paramlen = 1;
+//	fputs("HERE?\n", stdout);
+	while ( currTok == comma )
+	{
+		nextSym();
+		expr( &ttp);
+		*paramlen++;
+	}
+	
+
+
 	*/
