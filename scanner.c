@@ -783,6 +783,7 @@ void dealWithComment()
 
 void toNum() 
 {
+	currInt = 0;
 	int i;
 	for( i = 0; i < numCount; i++ )
 	{
@@ -798,7 +799,7 @@ void getNum ( char c )
 	
 void scanNum()
 {
-		
+	numCount = 0;
 	while( isDigit(currChar) )
 	{
 		getNum(currChar);
