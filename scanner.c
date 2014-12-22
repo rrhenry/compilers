@@ -90,6 +90,7 @@ Token setTok;
 
 FILE *toScan;
 FILE *codeOut;
+FILE *codeGenOut;
 
 /* BEGIN: String processing methods */
 
@@ -110,10 +111,10 @@ int strcmpis( const char *s1, const char *s2)	// str cmp ignore space
 	{
 		if (*s1++ != *s2++)			// if they are not equal
 		{
-			return -1;
+			return 0;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 /* END:   String processing methods */
@@ -167,14 +168,13 @@ typedef enum				// all possible opcodes
 	,pshi
 	,pop
 	,popi
+	,jsr
 	,isp
 	,jmp
 	,jmpc
-	,jsr
 	,jmpx
 	,for0
 	,for1
-	,selc
 	,nop
 } Opcode;
 
@@ -314,6 +314,15 @@ void listcode ( int savlc )
 	}
 }
 
+void generateCode ( int savlc )
+{
+	int ilc;
+	for ( ilc = savlc ; ilc <= lc-1 ; ilc++ )
+	{
+		fprintf( codeGenOut, "%5d %3d %5d\n", code[ilc].op, code[ilc].ld, code[ilc].ad);
+	}
+}
+
 void enterstdident ( char id [], IdClass cls, int ttp)
 {
 	stptr ++;
@@ -335,7 +344,7 @@ void searchid( char id [16], int* stp)
 	{
 		*stp = scopetab[ lev];
 
-		while ( strcmpis(symtab[ *stp].name, id) != 0)
+		while ( strcmpis(symtab[ *stp].name, id) != 1)
 		{
 			//printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
 			*stp = symtab[ *stp].previd;
@@ -407,7 +416,7 @@ void initstdmnemonics()
     mnemonic[ jmpx][ 0] = "jmpx";
     mnemonic[ for0][ 0] = "for0";
     mnemonic[ for1][ 0] = "for1";
-    mnemonic[ selc][ 0] = "selc";
+//    mnemonic[ selc][ 0] = "selc";
     mnemonic[ nop ][ 0] = "nop ";
 }
 
@@ -789,7 +798,7 @@ void getNum ( char c )
 	
 void scanNum()
 {
-	
+		
 	while( isDigit(currChar) )
 	{
 		getNum(currChar);
@@ -1264,11 +1273,12 @@ void scan()
 
 int main( int argc, char *argv[] )
 {	
-	int numArgs = 3;
+	int numArgs = 4;
 	if ( argc == numArgs)		// we need 1 file to open, specified on command line, so 2 command line args
 	{
 		toScan = fopen(argv[1], "r");		// assume second value is toParse file name
 		codeOut = fopen(argv[2], "w");
+		codeGenOut = fopen(argv[3], "w");
 
 		if (toScan != NULL)
 		{
@@ -1278,6 +1288,11 @@ int main( int argc, char *argv[] )
 		if (codeOut != NULL)
 		{
 			listcode( 0);
+		}
+
+		if (codeGenOut != NULL)
+		{
+			generateCode( 0);
 		}
 
 		fclose(toScan);
@@ -1620,6 +1635,7 @@ void factor( int* ttp)
 			break;
 		case ident:
 			searchid( currWord, &stp);
+			//printf("qualBuff: %s\n", qualBuff);
 			if ( stp == 0)
 			{
 				error( 11);
@@ -1979,22 +1995,82 @@ void stat ( displ)
 	else if ( currTok == ident )	// ASSIGNSTAT or PROCCALL
 	{
 		searchid(currWord, &stp);
+
 		int paramlen = 0;
 		designator();
 
-		if( currTok == assign)
+		printf("qualBuff: %s\n", qualBuff);
+		// Out. and In. are in qualBuff
+
+		if ( strcmpis( qualBuff, "Out.Int") == 1)			// writeInt
 		{
-			nextSym();
-			AssignStat( stp);
+			expect( lparen);
+
+			expr( &ttp);
+			gencode( opr, 0, 18);
+
+			while (currTok == comma)
+			{
+				nextSym();
+				expr( &ttp);
+				gencode( opr, 0, 18);
+			}
+
+			expect( rparen);
 		}
-		else if( currTok == lparen ) //	ProcCall -> designator [ ActParams ]
+		else if ( strcmpis( qualBuff, "In.Int") == 1)		// readInt
 		{
+			// takes a single argument
+			expect(lparen);
+			printsymtab();
+			searchid( currWord, &stp);
+
+			if ( stp == 0)
+			{
+				error( 34);
+			}
+			else
+			{
+				if( symtab[ stp].class == varcls)
+				{
+					gencode( psha, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+					gencode( opr, 0, 17);
+				}
+				else if ( symtab[ stp].class == paramcls)
+				{
+					gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
+					gencode( opr, 0, 17);
+				}
+				else
+				{
+					error( 34);
+				}
+			}
 			nextSym();
-			ActParams( stp, &paramlen);
-			gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
-			gencode( isp, 0, -paramlen);			
+			expect(rparen);
 		}	
-		
+		else if ( strcmpis( qualBuff, "Out.Ln") == 1)		// write newline
+		{
+
+			nextSym();
+
+		}
+		else
+		{
+			if( currTok == assign)
+			{
+				nextSym();
+				AssignStat( stp);
+			}
+			else if( currTok == lparen ) //	ProcCall -> designator [ ActParams ]
+			{
+				nextSym();
+				ActParams( stp, &paramlen);
+				gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
+				gencode( isp, 0, -paramlen);			
+			}	
+		}
+
 	}
 	else if ( currTok == IF_SYM)	// IFSTAT
 	{
@@ -2315,7 +2391,7 @@ void ProcDecl ()
 {
 	fputs("Start ProcDecl\n", stdout);
 	int displ = -2;							// displacement for param addr
-	int stp, procptr;
+	int stp, procptr, savstptr;
 
 	/* 
 		ProcHead -> PROCEDURE identdef [ FormParams ]
@@ -2338,6 +2414,7 @@ void ProcDecl ()
 		nextSym();
 	
 	enterScope();
+	savstptr = stptr;
 
 	if(currTok == lparen)
 	{
@@ -2372,6 +2449,8 @@ void ProcDecl ()
 	expect(END_SYM);
 	expect(ident);
 	exitScope();
+	stptr = savstptr;
+
 	fputs("Done ProcDecl\n", stdout);
 }
 
@@ -2506,6 +2585,7 @@ void DeclSeq ( int displ)
 			stpv1++;
 			symtab[ stpv1].classData.v.varaddr = displ;
 			displ = displ + typetab[ ttpV].size;
+
 		} while ( stpv1 <= stpv2 );
 
 		printsymtab();
