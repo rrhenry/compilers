@@ -1190,6 +1190,7 @@ void initSpecialSyms()
 	specialSymbols['#'] = notEqual;
 	specialSymbols[','] = comma;
 	specialSymbols['.'] = period;
+	specialSymbols['|'] = OR_SYM;
 
 }
 
@@ -1924,15 +1925,17 @@ void RepeatStat ( int displ)
 */
 void IfStat( int displ)
 {
-	int ttp, savlc1, savlc2;
+	int ttp, savlc1;//, savlc2;
+	int savElseLCs [ 65];
+	int numSavedLCs = 1;
 	fputs("This is IfStat\n", stdout);
 	expr( &ttp);
 	checktypes( ttp, booltyp);
 	expect(THEN_SYM);
-	savlc1 = lc;
+	savlc1 = lc;						// save for jump to code
 	gencode( jmpc, 0, 0);
 	StatSeq( displ);
-	savlc2 = lc;
+	savElseLCs[ numSavedLCs++] = lc;		// save for jmp to end
 	gencode( jmp, 0, 0);
 	code[ savlc1].ad = lc;
 
@@ -1940,13 +1943,14 @@ void IfStat( int displ)
 	{									// ignored for code gen at this time
 		nextSym();
 		expr( &ttp);
-		//checktypes( ttp, booltyp);
-		//nextSym();						// ??
+		checktypes( ttp, booltyp);
 		expect(THEN_SYM);
-		//savlc1 = lc;
+		savlc1 = lc;					// save for jmp to code
+		gencode( jmpc, 0, 0);
 		StatSeq( displ);
-										// could be broken
-		//code[ savlc1].ad = lc;
+		savElseLCs[ numSavedLCs++] = lc;
+		gencode( jmp, 0, 0);
+		code[ savlc1].ad = lc;
 	}
 	if ( currTok == ELSE_SYM )
 	{
@@ -1954,15 +1958,22 @@ void IfStat( int displ)
 		StatSeq( displ);
 	}
 
-	code [ savlc2].ad = lc;
+	// backpatch all elseif jumps to end
+	while ( numSavedLCs-- > 1)
+	{
+		code[ savElseLCs[ numSavedLCs]].ad = lc;
+	}
+
+	//code [ savlc2].ad = lc;
 	expect(END_SYM);
 	fputs("Done IfStat\n", stdout);
 }
 
 //	case -> [ CaseLabList : StatSeq ]
-void caseP ( int displ)
+void caseP ( int displ, int* savlc1, int* savlc2, int stp)
 {
 	fputs("CASE HERE YO\n", stdout);
+	int ttp;
 	/* 
 		CaseLabList -> LabelRange { , LabelRange }
 		LabelRange -> label [ .. label ]
@@ -1973,27 +1984,60 @@ void caseP ( int displ)
 	{
 		do
 		{
-			nextSym();
+			if ( currTok == number)
+			{
+				expr( &ttp);
+			}
+			else
+			{
+				nextSym();
+			}
+
 			if ( currTok == period )
 			{
 				nextSym();
 				if ( currTok == period )
 				{
 					nextSym();
+					// ok, so it's a range.
+					// if it's, say a..b, we want k >= a && k <= b, 
+					gencode( opr, 0, 13);	// k >= a
+					gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 					if ( currTok ==  string | currTok == number | currTok == ident)
 					{
-						nextSym();
+						if ( currTok == number)
+						{
+							expr( &ttp);
+							gencode( opr, 0, 11);	// k <= b
+							gencode( opr, 0, 15);	// k >= a && k <= b
+							*savlc1 = lc;
+							gencode( jmpc, 0, 0);
+						}
+						else
+						{
+							nextSym();
+						}
 					}
 						
 				}
 			}
+			else
+			{
+				// not a range, so we're good
+				gencode( opr, 0, 8);
+				*savlc1 = lc;
+				gencode( jmpc, 0, 0);
+			}
 			
 		}while ( currTok == comma);
 		
-		expect(colon);   // THIS WAS SEMIC BEFORE I CHANGED IT. IN THE GRAMMAR, IT SHOWS A COLON. 
-						// IF IT HAS BROKEN, PLEASE PUT SEMIC BACK. MAYBE GRAMMAR IS WRONG??
+		expect(colon);   
 		
-		StatSeq( displ);		
+		StatSeq( displ);
+		*savlc2 = lc;
+		gencode( jmp, 0, 0);
+		code[ *savlc1].ad = lc;
+
 	}
 	fputs("CASE END YO\n", stdout);
 	
@@ -2005,15 +2049,33 @@ void caseP ( int displ)
 void CaseStat ( int displ)			// TODO: do casestat
 {
 	fputs("This is CaseStat\n", stdout);
-	int ttp;
+	int ttp, savlc1, savlc2, stp;
+	int savLCs [65];
+	int numSavLCs = 1;
+	printf(" ------ Lookin at currWord %s \n", currWord);
+	searchid( currWord, &stp);
+	if ( stp == 0)
+	{
+		printf("Error: Ident in Case not yet defined.\n");
+	}
 	expr( &ttp);
 	expect(OF_SYM);
-	caseP( displ);
-	while (currTok == OR_SYM)
+	caseP( displ, &savlc1, &savlc2, stp);
+	savLCs[numSavLCs++] = savlc2;
+	while ( currTok == OR_SYM)
 	{
 		nextSym();
-		caseP( displ);
+		gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+		caseP( displ, &savlc1, &savlc2, stp);
+		savLCs[numSavLCs++] = savlc2;
 	}
+
+	// backpatch all case stat jumps to end
+	while ( numSavLCs-- > 1)
+	{
+		code[ savLCs[ numSavLCs]].ad = lc;
+	}
+
 	expect(END_SYM);
 	fputs("Done CaseStat\n", stdout);
 }
