@@ -2415,6 +2415,7 @@ void FormParams ( int procptr, int* displ)
 			nextSym();
 			if( currTok == period )
 			{
+				nextSym();
 				expect(ident);
 			}
 		}
@@ -2466,16 +2467,16 @@ void FormParams ( int procptr, int* displ)
 
 			}
 
+
 			expect(colon);
 			
-			//	FormType -> { ARRAY OF } qualident
+			/*	FormType -> { ARRAY OF } qualident	*/
 			while ( currTok == ARRAY_SYM )
 			{
 				nextSym();
 				expect(OF_SYM);
 			}	
-			// qualident();								// ignoring qualified ident
-														// just going to use ident
+						
 			if ( currTok == ident)
 			{
 				searchid( currWord, &stp);
@@ -2488,6 +2489,11 @@ void FormParams ( int procptr, int* displ)
 					paramtyp = symtab[ stp].idtyp;
 				}
 				nextSym();
+				if( currTok == period )
+				{
+					nextSym();
+					expect(ident);
+				}
 			}
 
 			// set types
@@ -2517,6 +2523,8 @@ void FormParams ( int procptr, int* displ)
 
 	}
 
+	/*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
+	/*															 ^	*/
 	expect(rparen);					
 	if ( currTok == colon)			// return type of procedure
 	{
