@@ -2715,66 +2715,68 @@ void DeclSeq ( int* displ)
 		int stpv1, stpv2, ttpV;
 		
 		nextSym();
-
-		/* identList */
-		/* 
+		
+		while ( currTok == ident )
+		{
+			/* identList */
+			/* 
 			We have an identList method. Is there a specific reason it's not being used?
 			Did I forget there was one? Did YOU creat it? Should we even call it here?
-		*/
+			*/
 
-		if ( currTok == ident)
-		{
-			insertid( currWord, varcls);
-			printsymtab();
-			stpv1 = stptr;					// save ptr to first entry
-			nextSym();		
-		}
-		else
-		{
-			printf("ERROR 4: ?????\n");
-		}
-
-		if ( currTok == mul)
-		{
-			nextSym();
-		}
-
-		while ( currTok == comma)
-		{
-			nextSym();
 			if ( currTok == ident)
 			{
 				insertid( currWord, varcls);
 				printsymtab();
-				nextSym();
+				stpv1 = stptr;					// save ptr to first entry
+				nextSym();		
 			}
 			else
 			{
 				printf("ERROR 4: ?????\n");
 			}
+
 			if ( currTok == mul)
 			{
 				nextSym();
 			}
-		}
-		stpv2 = stptr;						// save ptr to last entry
 
-		expect( colon);
-		type( &ttpV);						// now, ttpV should have the type
+			while ( currTok == comma)
+			{
+				nextSym();
+				if ( currTok == ident)
+				{
+					insertid( currWord, varcls);
+					printsymtab();
+					nextSym();
+				}
+				else
+				{
+					printf("ERROR 4: ?????\n");
+				}
+				if ( currTok == mul)
+				{
+					nextSym();
+				}
+			}
+			stpv2 = stptr;						// save ptr to last entry
 
-		do
-		{
-			symtab[ stpv1].idtyp = ttpV;
-			symtab[ stpv1].classData.v.varaddr = *displ;
-			printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
-			*displ = *displ + typetab[ ttpV].size;
-			stpv1++;
-		} while ( stpv1 <= stpv2 );
+			expect( colon);
+			type( &ttpV);						// now, ttpV should have the type
 
-		printsymtab();
+			do
+			{
+				symtab[ stpv1].idtyp = ttpV;
+				symtab[ stpv1].classData.v.varaddr = *displ;
+				printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
+				*displ = *displ + typetab[ ttpV].size;
+				stpv1++;
+			} while ( stpv1 <= stpv2 );
 
-		expect(SEMIC);
-
+			printsymtab();
+	
+			expect(SEMIC);
+	}
 	}
 	/* ProcDecl */
 	while (currTok == PROCEDURE_SYM)
