@@ -1,4 +1,4 @@
-//  Oberon Sparser
+//  Oberon Compiler
 //  Alexi Turcotte
 //  Roxanne Henry
 
@@ -8,13 +8,12 @@
 		-> Fix line numbers
 */
 
-#include <stdio.h>		// need for file io
+#include <stdio.h>
 #include "scanner.h"
 
-typedef enum { 								// OBERON 2, not OBERON S 
-				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, notEqual, comma, period,
-				ident, resWord, number, string, 
-			 	eofSym, invalidSym, opSym, SET_SYM, tilde, lcurly, rcurly,
+typedef enum {  
+				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, 
+				notEqual, comma, period, ident, resWord, number, string, eofSym, invalidSym, opSym, SET_SYM, tilde, lcurly, rcurly,
 			 	ARRAY_SYM,
 			    BEGIN_SYM,
 			    BY_SYM,
@@ -53,7 +52,6 @@ typedef enum { 								// OBERON 2, not OBERON S
 			    BOOLEAN_SYM,
 			    CHAR_SYM,
 			    FALSE_SYM,
-			    //INTEGER_SYM,
 			    NEW_SYM,
 			    REAL_SYM,
 			    TRUE_SYM
