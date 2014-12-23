@@ -1468,8 +1468,9 @@ void expr ( int* ttp)
 	if ( debugMode == 1) fputs("Done expr\n", stdout);
 }
 
-//	ActParams -> '(' [ ExprList ] ')'
-//	ExprList -> expr {, expr } 
+/*	ActParams -> '(' [ ExprList ] ')'	*/
+/*				  ^						*/
+/*	ExprList -> expr {, expr }			*/
 void ActParams ( int procptr, int* paramlen)
 {
 	if ( debugMode == 1) fputs("This is ActParams\n", stdout);
@@ -1567,20 +1568,24 @@ void ActParams ( int procptr, int* paramlen)
 	if ( debugMode == 1) fputs("Done ActParams\n", stdout);
 }
 
-//	designator -> qualident { selector }
-//	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')' 
+/*	designator -> qualident { selector }	*/
+/*	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')'	*/
 void designator ()
 {
 	if ( debugMode == 1) fputs("This is designator\n", stdout);
 	qualident();
 	while ( currTok == period | currTok == lbrac | currTok == hat ) 
 	{
+		/*	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')'	*/
+		/*				^													*/
 		if ( currTok == period)
 		{
 			nextSym();
 			expect(ident);
 		}
-			 
+		
+		/*	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')'	*/
+		/*						   ^										*/
 		else if ( currTok ==  lbrac )
 		{
 			int ttp;
@@ -1595,6 +1600,8 @@ void designator ()
 			}
 			expect(rbrac); 
 		}
+		/*	selector -> . ident | '[' ExprList ']' | ^ | '(' qualident ')'	*/
+		/*						   					 ^						*/
 		else if ( currTok == hat )
 			nextSym();
 		/*else if ( currTok == lparen )
@@ -1609,13 +1616,13 @@ void designator ()
 	if ( debugMode == 1) fputs("Done designator\n", stdout);
 }
 
-//	set -> '{' [ elem { , elem } ] '}'
+/*	set -> '{' [ elem { , elem } ] '}'	*/
 void set()
 {
 	if ( debugMode == 1) fputs("This is set\n", stdout);
 	int ttp;
 	
-	//	elem -> expr [ .. expr ]
+	/*	elem -> expr [ .. expr ]	*/
 	expr( &ttp);
 	if ( currTok == period )
 	{
@@ -1626,6 +1633,8 @@ void set()
 		}
 	}
 	
+	/*	set -> '{' [ elem { , elem } ] '}'	*/	
+	/*                      ^				*/
 	while ( currTok == comma )
 	{
 		nextSym();
@@ -1644,6 +1653,7 @@ void set()
 	if ( debugMode == 1) fputs("Done set\n", stdout);
 }
 
+
 /*	
 	factor -> num | string | NIL | TRUE | FALSE 
 			| set 
@@ -1660,25 +1670,21 @@ void factor( int* ttp)
 
 	switch ( currTok)
 	{
-										// TODO: distinguish between real & int
-		case number:					// int const
+		case number:					
 			*ttp = inttyp;
 			gencode( pshc, 0, currInt);
 			nextSym();
 			break;
-		// case real:						// real const
-		// 	nextSym();
-		// 	break;
 		case string:
 			nextSym();
 			break;
 		case NIL_SYM:
 			nextSym();
 			break;
-		case TRUE_SYM:					// skip for now... should gen true
+		case TRUE_SYM:
 			nextSym();
 			break;
-		case FALSE_SYM:					// skip for now... should gen false
+		case FALSE_SYM:
 			nextSym();
 			break;
 		case ident:
@@ -1715,7 +1721,7 @@ void factor( int* ttp)
 						nextSym();
 						int paramlen = 0;
 						// pfcall
-						if( currTok == lparen)// && symtab[ stp].classData.pr.lastparam != 0)
+						if( currTok == lparen)
 						{
 							nextSym();
 							ActParams( stp, &paramlen);
@@ -1765,17 +1771,17 @@ void factor( int* ttp)
 				}
 			}
 			break;
-		case lparen:
-			nextSym();
+		case lparen:		/*	'(' expr ')'	*/
+			nextSym();		/*	 ^				*/
 			expr( ttp);
 			expect(rparen);
 			break;
-		case tilde:
-			nextSym();
+		case tilde:			/*	~ factor	*/
+			nextSym();		/*	^			*/
 			factor( ttp);
 			break;
-		case lcurly:
-			nextSym();
+		case lcurly:		/*	set -> '{' [ elem { , elem } ] '}'	*/
+			nextSym();		/*  		^							*/
 			set();
 			break;
 	}
@@ -1784,7 +1790,7 @@ void factor( int* ttp)
 	
 }
 
-//	term -> factor { mulop factor }
+/*	term -> factor { mulop factor }	*/
 void term( int* ttp)
 {
 	Token mulop;
@@ -1792,7 +1798,7 @@ void term( int* ttp)
 	if ( debugMode == 1) fputs("This is term \n", stdout);
 	factor( ttp);
 	
-	//	mulop -> * | / | DIV | MOD | &
+	/*	mulop -> * | / | DIV | MOD | &	*/
 	while ( currTok == mul | currTok == slash | currTok == DIV_SYM | currTok == MOD_SYM | currTok == AND_SYM )
 	{
 		if ( currTok == AND_SYM)
@@ -1828,7 +1834,7 @@ void term( int* ttp)
 	if ( debugMode == 1) fputs("Done term\n", stdout);
 }
 
-//	StatSeq -> stat { ; stat }
+/*	StatSeq -> stat { ; stat }	*/
 void StatSeq ( int displ)
 {
 	if ( debugMode == 1) fputs("This is statseq\n", stdout);
@@ -1842,7 +1848,8 @@ void StatSeq ( int displ)
 	
 }
 
-//	AssignStat -> designator := expr
+/*	AssignStat -> designator := expr	*/
+/*							 ^			*/
 void AssignStat (int stp)
 {
 	if ( debugMode == 1) printf("Enter AssignStat\n");
@@ -1866,13 +1873,15 @@ void AssignStat (int stp)
 	if ( debugMode == 1) fputs("Done AssignStat\n", stdout);
 }
 
-//	RepeatStat -> REPEAT StatSeq UNTIL expr
+/*	RepeatStat -> REPEAT StatSeq UNTIL expr	*/
 void RepeatStat ( int displ)
 {
 	if ( debugMode == 1) fputs("Start RepeatStat \n", stdout);
 	int ttp, savlc;
 	savlc = lc;									// save location for later jump
 	StatSeq( displ);
+	/*	RepeatStat -> REPEAT StatSeq UNTIL expr	*/
+	/*								 ^			*/
 	if ( currTok == UNTIL_SYM)
 	{
 		nextSym();
@@ -1900,27 +1909,39 @@ void IfStat( int displ)
 	if ( debugMode == 1) fputs("This is IfStat\n", stdout);
 	expr( &ttp);
 	checktypes( ttp, booltyp);
+	
+	/*	IfStat -> IF expr THEN StatSeq	*/
+	/*					  ^				*/
 	expect(THEN_SYM);
 	savlc1 = lc;						// save for jump to code
 	gencode( jmpc, 0, 0);
+	
 	StatSeq( displ);
 	savElseLCs[ numSavedLCs++] = lc;		// save for jmp to end
 	gencode( jmp, 0, 0);
 	code[ savlc1].ad = lc;
 
+	/*	{ ELSIF expr THEN StatSeq }	*/
+	/*	  ^							*/
 	while ( currTok ==  ELSIF_SYM)
 	{									// ignored for code gen at this time
 		nextSym();
 		expr( &ttp);
 		checktypes( ttp, booltyp);
+		
+		/*	{ ELSIF expr THEN StatSeq }	*/
+		/*				 ^				*/
 		expect(THEN_SYM);
 		savlc1 = lc;					// save for jmp to code
 		gencode( jmpc, 0, 0);
+		
 		StatSeq( displ);
 		savElseLCs[ numSavedLCs++] = lc;
 		gencode( jmp, 0, 0);
 		code[ savlc1].ad = lc;
 	}
+	/*	[ ELSE StatSeq ] END	*/
+	/*	  ^						*/
 	if ( currTok == ELSE_SYM )
 	{
 		nextSym();
@@ -1938,10 +1959,10 @@ void IfStat( int displ)
 	if ( debugMode == 1) fputs("Done IfStat\n", stdout);
 }
 
-//	case -> [ CaseLabList : StatSeq ]
+/*	case -> [ CaseLabList : StatSeq ]	*/
 void caseP ( int displ, int* savlc1, int* savlc2, int stp)
 {
-	if ( debugMode == 1) fputs("CASE HERE YO\n", stdout);
+	if ( debugMode == 1) fputs("ENTERING CASE\n", stdout);
 	int ttp;
 	/* 
 		CaseLabList -> LabelRange { , LabelRange }
@@ -2000,6 +2021,8 @@ void caseP ( int displ, int* savlc1, int* savlc2, int stp)
 			
 		}while ( currTok == comma);
 		
+		/*	case -> [ CaseLabList : StatSeq ]	*/
+		/*						  ^				*/
 		expect(colon);   
 		
 		StatSeq( displ);
@@ -2009,8 +2032,9 @@ void caseP ( int displ, int* savlc1, int* savlc2, int stp)
 
 	}
 	if ( debugMode == 1) fputs("CASE END YO\n", stdout);
-	
 }
+
+
 /*
 	CaseStat -> CASE expr OF 
 				case { '|' case } END
@@ -2025,12 +2049,18 @@ void CaseStat ( int displ)			// TODO: do casestat
 	searchid( currWord, &stp);
 	if ( stp == 0)
 	{
-		if ( debugMode == 1) printf("Error: Ident in Case not yet defined.\n");
+		printf("Error: Ident in Case not yet defined.\n");
 	}
 	expr( &ttp);
+	
+	/*	CaseStat -> CASE expr OF	*/
+	/*						  ^		*/
 	expect(OF_SYM);
 	caseP( displ, &savlc1, &savlc2, stp);
 	savLCs[numSavLCs++] = savlc2;
+	
+	/*	case { '|' case } END	*/
+	/*			^				*/
 	while ( currTok == OR_SYM)
 	{
 		nextSym();
@@ -2062,20 +2092,29 @@ void WhileStat( int displ)
 	checktypes( booltyp, ttp);
 	savlc2 = lc;
 	gencode( jmpc, 0, 0);
+	
+	/*	WhileStat -> WHILE expr DO StatSeq	*/
+	/*							^			*/
 	expect(DO_SYM);
 	StatSeq( displ);
 	gencode( jmp, 0, savlc1);
 	code[ savlc2].ad = lc;
+	
+	/*	{ ELSIF expr DO StatSeq } END 	*/
+	/*	  ^								*/
 	while ( currTok == ELSIF_SYM)
 	{
 		nextSym();
 		expr( &ttp);
+		/*	{ ELSIF expr DO StatSeq } END 	*/
+		/*	  			 ^					*/
 		expect(DO_SYM);
 		StatSeq( displ);
 	}
 	expect(END_SYM);
 	if ( debugMode == 1) fputs("Done WhileStat\n", stdout);
 }
+
 
 /*
 	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END
@@ -2087,6 +2126,9 @@ void ForStat(int displ)
 	int downTo = 0;
 	int incby = 1;						// assuming 1 if there's no by
 	if ( debugMode == 1) fputs("Start ForStat\n", stdout);
+	
+	/*	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END	*/
+	/*				   ^														*/
 	if ( currTok == ident)
 	{
 		searchid( currWord, &lcvptr);
@@ -2097,20 +2139,30 @@ void ForStat(int displ)
 	{
 		error( 34);
 	}
+	
+	/*	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END	*/
+	/*				   		 ^													*/
 	expect(assign);
 	expr( &ttp1);
 	// pop value into appropriate memory location
 	gencode( pop, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+	
+	/*	/*	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END	*/
+	/*				   					 ^											*/
 	expect(TO_SYM);
 	savlc1 = lc;	// save location of later jump (i.e. jump gere for comparison)
 	// push for var onto stack
 	gencode( push, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+	
 	expr( &ttp2);
 	tdtptr = lc;				// save ptr to the variable check in code
 								// since we don't know if we need le or ge yet
 	gencode( opr, 0, 11);		// assuming it's ident <= expr incase there is no by
 	savlc2 = lc;				// save addr of next instruction for backpatch
 	gencode( jmpc, 0, 0);
+	
+	/*	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END	*/
+	/*				  				 		   ^								*/
 	if (currTok == BY_SYM)		
 	{
 		nextSym();
@@ -2129,6 +2181,9 @@ void ForStat(int displ)
 		//gencode( pop, 0, 0);
 		incby = currInt;
 	}
+	
+	/*	ForStat -> FOR ident := expr TO expr [ BY ConstExpr ] DO StatSeq END    */
+	/*	                                                      ^                 */
 	expect(DO_SYM);
 
 	StatSeq( displ);
@@ -2157,6 +2212,7 @@ void ForStat(int displ)
 }
 
 
+
 /*
 	stat -> [ AssignStat | ProcCall | IfStat | CaseStat | WhileStat | 
 				RepeatStat | ForStat ]
@@ -2176,6 +2232,10 @@ void stat ( displ)
 		searchid(qualBuff, &stp);
 
 		int paramlen = 0;
+		
+		/*	AssignStat	-> 	designator := expr		*/
+		/*	ProcCall	-> 	designator [ActParams]	*/
+		/*					^						*/
 		designator();
 
 		if ( strcmp( qualBuff, "Out.Int") == 0)
@@ -2241,9 +2301,9 @@ void stat ( displ)
 			else if( currTok == lparen ) //	ProcCall -> designator [ ActParams ]
 			{
 				nextSym();
-				if ( debugMode == 1) printf(" == Entering ACTPARAMS from STAT because lol?\n");
+				if (	debugMode == 1 ) printf(" == Entering ACTPARAMS from STAT because lol?\n");
 				ActParams( stp, &paramlen);
-				if ( debugMode == 1) printf(" =========================== JSR Printed in STAT =========================\n");
+				if (	debugMode == 1 ) printf(" =========================== JSR Printed in STAT =========================\n");
 				gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
 				gencode( isp, 0, -paramlen);
 			}	
@@ -2276,6 +2336,8 @@ void stat ( displ)
 	}
 	if ( debugMode == 1) fputs("Done stat\n", stdout);
 }
+
+
 
 /*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
 void FormParams ( int procptr, int* displ)
@@ -2399,7 +2461,6 @@ void FormParams ( int procptr, int* displ)
 
 			}
 
-
 			expect(colon);
 			
 			/*	FormType -> { ARRAY OF } qualident	*/
@@ -2457,7 +2518,9 @@ void FormParams ( int procptr, int* displ)
 
 	/*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
 	/*															 ^	*/
-	expect(rparen);					
+	expect(rparen);	
+	
+	// This is just checking the type of the Proc...				
 	if ( currTok == colon)			// return type of procedure
 	{
 		nextSym();
@@ -2476,6 +2539,8 @@ void FormParams ( int procptr, int* displ)
 		}
 
 		qualident();
+		
+		// -1 for static link on stack
 		symtab[ procptr].classData.pr.resultaddr = *displ - typetab[ ttpR].size - 1;
 		printsymtab();
 	}
@@ -2633,7 +2698,7 @@ void ProcDecl ()
 		// no param list
 		symtab[ procptr].classData.pr.lastparam = 0;
 	}
-	printf(" =========== Result addr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+	if (	debugMode == 1 ) printf(" =========== Result addr: %d \n", symtab[ procptr].classData.pr.resultaddr);
 
 	expect(SEMIC);
 	displ = 1;						// reset displ for use in the code
@@ -2665,7 +2730,7 @@ void ProcDecl ()
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
-		printf("ResAddr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+		if (	debugMode == 1 ) printf("ResAddr: %d \n", symtab[ procptr].classData.pr.resultaddr);
 		gencode( pop, 0, symtab[ procptr].classData.pr.resultaddr);
 	}
 	gencode( opr, 0, 1);			// return
@@ -2772,8 +2837,8 @@ void DeclSeq ( int* displ)
 		{
 
 			/*	identList -> identDef {, identDef}
-				identDef -> ident [*]
-			 */
+			identDef -> ident [*]
+			*/
 			if ( currTok == ident)
 			{
 				insertid( currWord, varcls);
@@ -2823,7 +2888,7 @@ void DeclSeq ( int* displ)
 			{
 				symtab[ stpv1].idtyp = ttpV;
 				symtab[ stpv1].classData.v.varaddr = *displ;
-				printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
+				if (	debugMode == 1 ) printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
 				*displ = *displ + typetab[ ttpV].size;
 				stpv1++;
 			} while ( stpv1 <= stpv2 );
@@ -2831,7 +2896,7 @@ void DeclSeq ( int* displ)
 			printsymtab();
 	
 			expect(SEMIC);
-	}
+		}
 	}
 	
 	/* ProcDecl */
