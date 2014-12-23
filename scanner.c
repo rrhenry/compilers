@@ -2970,6 +2970,13 @@ void Module ()
 	gencode( opr, 0, 0);
 	expect(END_SYM);
 	expect(ident);
+
+	if ( plsPrintSymTab == 1) 
+	{
+		printf("------------------------\n Symbol table upon exit:\n");
+		printsymtab();
+	}
+
 	if( currTok != period )
 	{
 		fputs("\nln: ", stdout);
