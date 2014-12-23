@@ -482,7 +482,10 @@ void initstdidents()
 
 	// enter std function calls
 	enterstdident( stdidents[  0][0], stdpcls, 0);			// ABS
+	symtab[ stptr].classData.s.procnum = 0;					// ABS proc num = 0
 	enterstdident( stdidents[ 13][0], stdpcls, 0);			// ODD
+	symtab[ stptr].classData.s.procnum = 1;					// ODD proc num = 1
+
 
 }
 
@@ -1747,6 +1750,9 @@ void factor( int* ttp)
 			break;
 		case ident:
 			searchid( currWord, &stp);
+
+			printf("    currWord: %s \n", currWord);
+
 			if ( stp == 0)
 			{
 				error( 11);
@@ -1784,11 +1790,45 @@ void factor( int* ttp)
 						// else paramlen = 0
 						printf(" =================== JSR Printed ===================\n");
 						gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
-						gencode( isp, 0, -paramlen);	// +1 for static link on stack
+						gencode( isp, 0, -paramlen);
 						break;
-					// case stdfcls:			// TODO: Maybe deal with this
-					// 	nextSym();				//       separately
-					// 	break;
+					case stdpcls:
+						nextSym();
+						expect(	lparen);
+						switch ( symtab[ stp].classData.s.procnum)
+						{
+							/* ABS( expr) 
+							   Returns the positive value of expr 
+	
+								Implementation roughly as:
+								if ( expr < 0)
+									NEG expr
+								
+							   */
+							case 0:		// ABS 
+								expr( ttp);
+								int savlc1;
+								searchid( currWord, &stp);
+								// push variable onto stack, we will negate if needed
+								gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
+								gencode( pshc, 0, 0);	// push 0 onto stack
+								gencode( opr, 0, 10);	// variable <= 0
+								savlc1 = lc;
+								gencode( jmpc, 0, 0);
+								gencode( opr, 0, 2);	// if variable <= 0, negate
+								code[ savlc1].ad = lc;	// backpatch
+								break;
+							/* ODD( expr)
+							   Returns expr MOD 2 */
+							case 1:		// ODD
+								expr( ttp);
+								gencode( pshc, 0, 2);
+								gencode( opr,  0, 7);
+								break;
+						}
+						expect(	rparen);
+					 	//nextSym();
+					 	break;
 				}
 			}
 			break;
@@ -1888,10 +1928,6 @@ void AssignStat (int stp)
 			else
 				gencode( pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 			break;
-		//case proccls:		// irrelevant to Oberon
-		//	printf(" ~~~~~~~~~~~~~~~ Reached! ~~~~~~~~~~~~~~\n");
-		//	gencode( pop, currlev - (symtab[ stp].idlev + 1), symtab[ stp].classData.pr.resultaddr);	// pop return value
-		//	break;
 	}
 
 	fputs("Done AssignStat\n", stdout);
@@ -2114,12 +2150,14 @@ void WhileStat( int displ)
 */	
 void ForStat(int displ)
 {
-	int ttp1, ttp2, savlc1, savlc2, lcvptr;
+	int ttp1, ttp2, savlc1, savlc2, lcvptr, tdtptr;
+	int downTo = 0;
+	int incby = 1;						// assuming 1 if there's no by
 	fputs("Start ForStat\n", stdout);
 	if ( currTok == ident)
 	{
 		searchid( currWord, &lcvptr);
-		gencode( psha, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+		//gencode( psha, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
 		nextSym();
 	}
 	else
@@ -2128,9 +2166,19 @@ void ForStat(int displ)
 	}
 	expect(assign);
 	expr( &ttp1);
+	// pop value into appropriate memory location
+	gencode( pop, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
 	expect(TO_SYM);
+	savlc1 = lc;	// save location of later jump (i.e. jump gere for comparison)
+	// push for var onto stack
+	gencode( push, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
 	expr( &ttp2);
-	if (currTok == BY_SYM)		// TODO: ignoring by for now
+	tdtptr = lc;				// save ptr to the variable check in code
+								// since we don't know if we need le or ge yet
+	gencode( opr, 0, 11);		// assuming it's ident <= expr incase there is no by
+	savlc2 = lc;				// save addr of next instruction for backpatch
+	gencode( jmpc, 0, 0);
+	if (currTok == BY_SYM)		
 	{
 		nextSym();
 		printf(" --------------- before call to expr in by... \n");
@@ -2138,18 +2186,39 @@ void ForStat(int displ)
 		{
 			nextSym();								// skip so it's properly ignored atm
 			printf(" Gonna be DOWNTO, yo!\n");
+			downTo = 1;
+			// if the BY clause is negative, we're assuming we want x to be >= expr
+			code[ tdtptr].ad = 13;	// so change to ge
 		}
-		expr( &ttp1);
+		//expr( &ttp1);
+		nextSym();
 		printf(" --------------- in By, Lookin at currInt %d \n", currInt);
-		gencode( pop, 0, 0);
+		//gencode( pop, 0, 0);
+		incby = currInt;
 	}
 	expect(DO_SYM);
-	savlc1 = lc;
-	gencode( for0, 0, 0);		// gencode( for0, f, 0);
-	savlc2 = lc;
+
 	StatSeq( displ);
-	gencode( for1, 0, savlc2);	// gencode( for1, f, savlc2);
-	code[ savlc1].ad = lc;
+
+	// push the loop control variable as well as its inc/dec value onto the stack
+	gencode( push, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+	gencode( pshc, currlev - symtab[ lcvptr].idlev, incby);
+	// perform the appropriate operation
+	if ( downTo == 1)
+	{
+		// dec
+		gencode( opr, 0, 4);
+	}
+	else
+	{
+		// inc
+		gencode( opr, 0, 3);
+	}
+	// pop the value into the loop control var, in case the user wants to use it
+	gencode( pop, currlev - symtab[ lcvptr].idlev, symtab[ lcvptr].classData.v.varaddr);
+	// jump up to the start of the loop for the check
+	gencode( jmp, 0, savlc1);
+	code[ savlc2].ad = lc;			// jump here to skip loop
 	expect(END_SYM);
 	fputs("Done ForStat\n", stdout);
 }
@@ -2166,11 +2235,22 @@ void stat ( displ)
 	//  REPEATSTAT
 	if ( currTok == REPEAT_SYM )
 	{
+		nextSym();
 		RepeatStat( displ);
 	} 
 	else if ( currTok == ident )	// ASSIGNSTAT or PROCCALL
 	{
 		searchid(currWord, &stp);
+
+		// int absFlag = 0;
+		// int oddFlag = 0;
+
+		// printf("    currWord: %s \n ", currWord);
+
+		// if ( strcmp( currWord, "ABS") == 0)
+		// 	absFlag = 1;
+		// else if ( strcmp ( currWord, "ODD") == 0)
+		// 	oddFlag = 1;
 
 		int paramlen = 0;
 		designator();
@@ -2178,7 +2258,21 @@ void stat ( displ)
 		printf("qualBuff: %s\n", qualBuff);
 		// Out. and In. are in qualBuff
 
-		if ( strcmp( qualBuff, "Out.Int") == 0)
+		// if ( absFlag == 1)
+		// {
+		// 	printf("It's ABS! \n");
+		// 	expect( lparen);
+		// 	expr( &ttp);
+		// 	expect( rparen);
+		// }
+		// else if ( oddFlag == 1)
+		// {
+		// 	printf("It's ODD! \n");
+		// 	expect( lparen);
+		// 	expr( &ttp);
+		// 	expect( rparen);
+		// }
+		/*else*/ if ( strcmp( qualBuff, "Out.Int") == 0)
 		{	// writeInt
 			expect( lparen);
 
