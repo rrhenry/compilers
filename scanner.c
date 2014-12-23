@@ -1241,7 +1241,7 @@ void initSymNames()
 	 symNames[   BOOLEAN_SYM][ 0] = "BOOLEAN_SYM";
 	 symNames[      CHAR_SYM][ 0] = "CHAR_SYM";
 	 symNames[     FALSE_SYM][ 0] = "FALSE_SYM";
-	// symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
+	 symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
 	 symNames[       NEW_SYM][ 0] = "NEW_SYM";
 	 symNames[      REAL_SYM][ 0] = "REAL_SYM";
 	 symNames[      TRUE_SYM][ 0] = "TRUE_SYM";
