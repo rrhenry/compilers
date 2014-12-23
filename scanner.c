@@ -2283,7 +2283,6 @@ void stat ( displ)
 		{	// readInt
 			// takes a single argument
 			expect(lparen);
-			printsymtab();
 			searchid( currWord, &stp);
 
 			if ( stp == 0)
@@ -2567,7 +2566,6 @@ void FormParams ( int procptr, int* displ)
 		
 		// -1 for static link on stack
 		symtab[ procptr].classData.pr.resultaddr = *displ - typetab[ ttpR].size - 1;
-		printsymtab();
 	}
 
 	if ( debugMode == 1) fputs("End FormParams\n", stdout);
@@ -2697,7 +2695,6 @@ void ProcDecl ()
 		insertid( currWord, proccls);
 		procptr = stptr;
 		nextSym();
-		printsymtab();
 	}
 	else
 	{
@@ -2867,7 +2864,6 @@ void DeclSeq ( int* displ)
 			if ( currTok == ident)
 			{
 				insertid( currWord, varcls);
-				printsymtab();
 				stpv1 = stptr;					// save ptr to first entry
 				nextSym();		
 			}
@@ -2887,7 +2883,6 @@ void DeclSeq ( int* displ)
 				if ( currTok == ident)
 				{
 					insertid( currWord, varcls);
-					printsymtab();
 					nextSym();
 				}
 				else
@@ -2917,8 +2912,6 @@ void DeclSeq ( int* displ)
 				*displ = *displ + typetab[ ttpV].size;
 				stpv1++;
 			} while ( stpv1 <= stpv2 );
-
-			printsymtab();
 	
 			expect(SEMIC);
 		}
