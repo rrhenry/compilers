@@ -661,7 +661,6 @@ void clrLine()
 void getLine()
 {
 	clrLine();
-	//lineNo ++;
 
 	inptr = 0;
 	char theChar = getc(toScan);
