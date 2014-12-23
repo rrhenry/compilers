@@ -384,7 +384,7 @@ void searchid( char id [16], int* stp)
 	} while (*stp == 0 && lev >= 0);
 
 	if (*stp == 0)
-		if ( debugMode == 1) printf("ERROR: 42 Undeclared identifier: %s\n", id);
+		printf("ERROR: 42 Undeclared identifier: %s\n", id);
 
 }
 
@@ -399,7 +399,7 @@ void insertid( char id [16], IdClass cls)
 	}
 	if ( stp != 0)
 	{
-		if ( debugMode == 1) fputs("ERROR: 44 Multiple declarations.\n", stdout);
+		fputs("ERROR: 44 Multiple declarations.\n", stdout);
 	}
 	if ( stptr < stsize)
 	{
@@ -407,7 +407,7 @@ void insertid( char id [16], IdClass cls)
 	}
 	else
 	{
-		if ( debugMode == 1) fputs("F_ERROR: Symbol table overflow.\n", stdout);
+		fputs("F_ERROR: Symbol table overflow.\n", stdout);
 	}
 
 	strcopy(symtab[ stptr].name, id);
@@ -422,7 +422,7 @@ void insertid( char id [16], IdClass cls)
 void checktypes(int ttp1, int ttp2)
 {
 	if (ttp1 != ttp2)
-		if ( debugMode == 1) printf("Type mismatch! Oh no!\n");
+		printf("Type mismatch! Oh no!\n");
 }
 
 //* BEGIN: Subset of Code Gen methods -- compiler initialization *//
@@ -443,7 +443,6 @@ void initstdmnemonics()
     mnemonic[ jmpx][ 0] = "jmpx";
     mnemonic[ for0][ 0] = "for0";
     mnemonic[ for1][ 0] = "for1";
-//    mnemonic[ selc][ 0] = "selc";
     mnemonic[ nop ][ 0] = "nop ";
 }
 
@@ -522,25 +521,25 @@ void enterstdtypes()
 
 void printsymtab()
 {
-	if ( debugMode == 1) printf("\n");
-	if ( debugMode == 1) printf("      name             level   type  previd\n");		// TOADD addr  
+	printf("\n");
+	printf("      name             level   type  previd\n");		// TOADD addr  
 
 	int i;
 	for ( i = 1; i <= stptr; i++)
 	{
-		if ( debugMode == 1) printf("%4d:%16s %6d %6d %7d\n", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
+		printf("%4d:%16s %6d %6d %7d\n", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
 	}
 }
 
 void printtyptab()
 {
-	if ( debugMode == 1) printf("\n");
-	if ( debugMode == 1) printf("       size  lastfld \n");
+	printf("\n");
+	printf("       size  lastfld \n");
 
 	int i;
 	for ( i = 1; i <= ttptr; i++)
 	{
-		if ( debugMode == 1) printf("%4d:%6d %8d\n", i, typetab[ i].size, typetab[ i].form);
+		printf("%4d:%6d %8d\n", i, typetab[ i].size, typetab[ i].form);
 	}
 }
 
@@ -561,7 +560,7 @@ void writeSym();
 
 void error (int e)
 {
-	if ( debugMode == 1) printf("ERROR %d\n", e);
+	printf("ERROR %d\n", e);
 }
 
 int isDigit(char aChar)
@@ -643,7 +642,8 @@ int isOp(char aChar)
 
 int isSepG()
 {
-	if (currChar == ' ' || currChar == '\t' || currChar == '\n' || currChar == '\r')//|| currChar == ')' || currChar == '(')			// if its a space
+	// if it's a separator
+	if (currChar == ' ' || currChar == '\t' || currChar == '\n' || currChar == '\r')
 		return 1;
 
 	return 0;
@@ -672,7 +672,7 @@ int isResWord()
 	int i;
 	for ( i = 0; i < RESWORD_SIZE; i++ )
 	{
-		if (strcmp(currWord, *resWords[i]) == 0)
+		if ( strcmp(currWord, *resWords[i]) == 0)
 			return i;
 	}
 
@@ -693,8 +693,8 @@ void clrLine()
 	int i;
 	for ( i = 0; i < BUFF_SIZE; i++ )
 	{
-		if (currLine[i] == '\0') break;
-		currLine[i] = '\0';
+		if ( currLine[i] == '\0') break;
+			currLine[i] = '\0';
 	}
 }
 
@@ -710,11 +710,9 @@ void getLine()
 
 	while ( theChar != '\n' && inptr <= BUFF_SIZE && theChar != EOF && theChar != '\0' )
 	{
-		// putc(theChar, stdout);
 		theChar = getc(toScan);
 		inptr ++;
 		currLine[inptr] = theChar;
-		// putc(currWord[inptr], stdout);
 	}
 
 	lineLen = inptr;
@@ -726,16 +724,9 @@ void getLine()
 
 }
 
-//	*
-//	Get a character and put it in currChar.
-//	-- might be useless
-//	-- might want to grab from currLine and put into currChar?
-//	++ probably not though. We need to fetch a character based on a counter, right?
-//  ++ we don't necessarily want that function in getLine? 
-//
 void getChar()
 {
-	if(inptr >= lineLen)
+	if( inptr >= lineLen)
 	{
 		getLine();
 	}
@@ -744,31 +735,26 @@ void getChar()
 		currChar = currLine[inptr]; 
 		inptr ++;
 	}
-	 
-	//putc(currChar, stdout);
 
 }
 
 void moveUp()
 {
-	while (isSep(currChar) && currChar != EOF)
+	while ( isSep(currChar) && currChar != EOF)
 	{
 		getChar();
 	}
 }
 
-//	*
-//	Attempting to make a getWord method...
-//
 void getWord()	// assumes we're on the first letter of a word
 {
 	int cursor = count;
 	int sCount = count;
 	clrWord();
 
-	while(isAlpha(currChar) && (cursor - sCount) < WORD_SIZE)				// while the current character is not a separator ...
+	while( (isAlpha( currChar) || isDigit( currChar)) && ( cursor - sCount) < WORD_SIZE)	// while the current character is not a separator ...
 	{
-		currWord[cursor - sCount] = currChar;
+		currWord[ cursor - sCount] = currChar;
 		cursor++;
 		getChar();
 	}
@@ -783,13 +769,13 @@ void dealWithComment()
 	{
 		getChar();
 
-		if (currChar == EOF)
+		if ( currChar == EOF)
 		{
-			if ( debugMode == 1) printf("Oops, end of file encoutered in comment.");
+			printf("Oops, end of file encoutered in comment.");
 			nestLvl = 0;
 			break;
 		}
-		else if (currChar == '(')
+		else if ( currChar == '(')
 		{
 			if ( inptr < BUFF_SIZE && currLine[inptr] == '*')
 			{
@@ -797,7 +783,7 @@ void dealWithComment()
 				getChar();
 			}
 		}
-		else if (currChar == '*')
+		else if ( currChar == '*')
 		{
 			if ( inptr < BUFF_SIZE && currLine[inptr] == ')')
 			{
@@ -806,7 +792,7 @@ void dealWithComment()
 			}
 		}
 
-	} while (nestLvl > 0);
+	} while ( nestLvl > 0);
 	getChar();
 }
 
@@ -838,7 +824,7 @@ void scanNum()
 
 	toNum();
 	
-	if (currChar == '.' && currLine[inptr] != '.') // need addtional lookahead for range op
+	if ( currChar == '.' && currLine[inptr] != '.') // need addtional lookahead for range op
 	{
 		
 		getChar();
@@ -850,7 +836,6 @@ void scanNum()
 
 		if( isSep(currChar) || currChar == ';' || currChar == EOF) // Real
 		{
-			//if ( debugMode == 1) fputs("Setting for Decimal\n", stdout);
 			currTok = REAL_SYM;
 		}
 		else if( currChar == 'E' || currChar == 'D' ) // Scalefac
@@ -865,7 +850,6 @@ void scanNum()
 
 				if( isSep(currChar) || currChar == ';' || currChar == EOF)
 				{
-					//if ( debugMode == 1) fputs("Setting for ScaleFac\n", stdout);
 					currTok = number;
 				}
 			}
@@ -873,7 +857,6 @@ void scanNum()
 	}
 	else if ( isSep(currChar) || currChar == ';')
 	{
-		//if ( debugMode == 1) fputs("Setting for integer\n", stdout);
 		currTok = number;
 	}
 	else if ( isHexDigit(currChar) )
@@ -887,7 +870,6 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				//if ( debugMode == 1) fputs("Setting for hexDigit\n", stdout);
 				currTok = number;
 			}
 				
@@ -899,7 +881,6 @@ void scanNum()
 			getChar();
 			if( isSep(currChar) || currChar == ';' )
 			{
-				//if ( debugMode == 1) fputs("Setting for hexString\n", stdout);
 				currTok = string;
 			}
 				
@@ -928,7 +909,6 @@ void scanIdent()
 
 	if (resIndex != -1)
 	{
-		//if ( debugMode == 1) fputs("Scanning ident\n", stdout);
 		currTok = resWordTokens[resIndex];
 	}
 	else
@@ -966,30 +946,26 @@ void scanString()
 void writeSym()
 {
 
-	if ( debugMode == 1) printf("%d", lineNo);
-	if ( debugMode == 1) fputs(": ", stdout);
-	if ( debugMode == 1) fputs("[", stdout);
-	if ( debugMode == 1) fputs(symNames[currTok][0], stdout);
+	printf("%d", lineNo);
+	fputs(": ", stdout);
+	fputs(symNames[currTok][0], stdout);
 	
 
-	switch (currTok)
+	switch ( currTok)
 	{
 		case ident:
-			if ( debugMode == 1) fputs(": ", stdout);
-			if ( debugMode == 1) fputs(currWord, stdout);
+			fputs(": ", stdout);
+			fputs(currWord, stdout);
 			break;
 
 		default:
 
 			break;
-
 	}
-
-	if ( debugMode == 1) fputs("] \n", stdout);
 
 	if (gotNewLine == 1)
 	{
-		if ( debugMode == 1) printf("\n");
+		printf("\n");
 		gotNewLine = 0;
 		lineNo ++;
 	}
@@ -1010,18 +986,16 @@ void nextSym()
 	else if ( isAlpha(currChar) )
 	{
 		scanIdent();
-		//if ( debugMode == 1) fputs("Scanned Ident\n",stdout);
 	}
 	else if (isDigit(currChar))
 	{
-		if ( debugMode == 1) fputs("Scanned numba\n",stdout);
 		scanNum();
 	}
 	else
 	{
 		switch (currChar)
 		{
-			case '(':					// lparen
+			case '(':
 
 				getChar();
 				if (currChar != '*')
@@ -1035,10 +1009,10 @@ void nextSym()
 				}
 				break;
 
-			case '<':				// lt
+			case '<':
 				currTok = lt;
 				getChar();
-				if ( currChar == '=' )
+				if ( currChar == '=' )	// <=
 				{
 					currTok = lte;
 					getChar(); // we need to move up to the next character
@@ -1048,7 +1022,7 @@ void nextSym()
 			case '>':
 				currTok = gt;
 				getChar();
-				if ( currChar == '=' )
+				if ( currChar == '=' )	// >=
 				{
 					currTok = gte;
 					getChar();
@@ -1075,7 +1049,7 @@ void nextSym()
 				break;
 		}
 	}
-	if (wasComment == 0)
+	if ( wasComment == 0)
 	{
 		writeSym();
 	}
@@ -1124,7 +1098,7 @@ void initScanner()
 	resWords [ 37][ 0] = "VAR";
 	resWords [ 38][ 0] = "WHILE";
 	resWords [ 39][ 0] = "WITH";
-//	resWords [ 40][ 0] = "INTEGER";
+	// INTEGER
 
 	resWordTokens [  0] = BOOLEAN_SYM;
 	resWordTokens [  1] = CHAR_SYM;
@@ -1166,7 +1140,7 @@ void initScanner()
 	resWordTokens [ 37] = VAR_SYM;
 	resWordTokens [ 38] = WHILE_SYM;
 	resWordTokens [ 39] = WITH_SYM;
-//	resWordTokens [ 40] = INTEGER_SYM;
+	// INTEGER
 
 }
 
@@ -1178,24 +1152,24 @@ void initSpecialSyms()
 		specialSymbols[i] = null;
 	}
 
-	specialSymbols['('] = lparen;
-	specialSymbols[')'] = rparen;
-	specialSymbols['+'] = plus;
-	specialSymbols['-'] = minus;
-	specialSymbols['/'] = slash;
-	specialSymbols['*'] = mul;
-	specialSymbols[']'] = rbrac;
-	specialSymbols['['] = lbrac;
-	specialSymbols['='] = equal;
-	specialSymbols[':'] = colon;
-	specialSymbols['<'] = lt;
-	specialSymbols['>'] = gt;
-	specialSymbols[';'] = SEMIC;
-	specialSymbols['^'] = hat;
-	specialSymbols['#'] = notEqual;
-	specialSymbols[','] = comma;
-	specialSymbols['.'] = period;
-	specialSymbols['|'] = OR_SYM;
+	specialSymbols[ '('] = lparen;
+	specialSymbols[ ')'] = rparen;
+	specialSymbols[ '+'] = plus;
+	specialSymbols[ '-'] = minus;
+	specialSymbols[ '/'] = slash;
+	specialSymbols[ '*'] = mul;
+	specialSymbols[ ']'] = rbrac;
+	specialSymbols[ '['] = lbrac;
+	specialSymbols[ '='] = equal;
+	specialSymbols[ ':'] = colon;
+	specialSymbols[ '<'] = lt;
+	specialSymbols[ '>'] = gt;
+	specialSymbols[ ';'] = SEMIC;
+	specialSymbols[ '^'] = hat;
+	specialSymbols[ '#'] = notEqual;
+	specialSymbols[ ','] = comma;
+	specialSymbols[ '.'] = period;
+	specialSymbols[ '|'] = OR_SYM;
 
 }
 
@@ -1286,21 +1260,20 @@ void initSymNames()
 //
 void scan()
 {
+	// initialize scanner, parser, compiler
 	initScanner();
 	initSymNames();
 	initSpecialSyms();
 	initcompile();
 
-	if ( debugMode == 1) fputs("\nScanning ... Begin.\n\n", stdout);
-	getChar();
-	//while (currTok != eofSym)
-	//{
-		//nextSym();
-		Module();
-		//if ( debugMode == 1) fputs("Parse???",stdout);
-		//}
+	fputs("\nScanning ... Begin.\n\n", stdout);
 
-	if ( debugMode == 1) fputs("\nScanning complete.\n\n", stdout);
+	// first call to scanner, to get the character ready
+	getChar();
+
+	Module();
+
+	fputs("\nScanning complete.\n\n", stdout);
 
 }
 
@@ -1333,7 +1306,7 @@ int main( int argc, char *argv[] )
 	}
 	else
 	{
-		if ( debugMode == 1) printf("\nError: %d arguments expected, %d provided.\n", numArgs, argc);
+		printf("\nError: %d arguments expected, %d provided.\n", numArgs, argc);
 	}
 
 	return 0;
@@ -1349,21 +1322,20 @@ void expect (Token t)
 {
 	if (currTok != t)
 	{
-		if ( debugMode == 1) fputs("\nln: ", stdout);
-		if ( debugMode == 1) printf("%d", lineNo);
-		if ( debugMode == 1) fputs("  ERROR: Unexpexted token ", stdout);
-		if ( debugMode == 1) fputs(symNames[currTok][0], stdout);
-		if ( debugMode == 1) fputs(". ", stdout);
-		if ( debugMode == 1) fputs(symNames[t][0], stdout);
-		if ( debugMode == 1) fputs(" expected\n\n", stdout);
+		fputs("\nln: ", stdout);
+		printf("%d", lineNo);
+		fputs("  ERROR: Unexpexted token ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs(". ", stdout);
+		fputs(symNames[t][0], stdout);
+		fputs(" expected\n\n", stdout);
 		
-		if ( debugMode == 1) fputs(currLine, stdout);
+		fputs(currLine, stdout);
 		
 		int i;
 		for( i = 0; i < inptr-2; i++)
 			fputc('-', stdout);
-		if ( debugMode == 1) fputs("^\n\n", stdout);
-		
+		fputs("^\n\n", stdout);
 		
 	}
 
