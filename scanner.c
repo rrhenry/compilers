@@ -1579,9 +1579,8 @@ void ActParams ( int procptr, int* paramlen)
 		expr( &ttp);
 		*paramlen = 1;
 	}
-
 	while ( currTok	== comma)
-	{
+	{	
 		nextSym();
 		nextparamptr ++;
 
@@ -1597,12 +1596,12 @@ void ActParams ( int procptr, int* paramlen)
 					if ( symtab[ stp].class == varcls)
 					{
 						gencode( psha, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
-						*paramlen ++;
+						*paramlen = *paramlen + 1;
 					}
 					else if ( symtab[ stp].class == paramcls)
 					{
 						gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
-						*paramlen ++;
+						*paramlen = *paramlen + 1;
 					}
 					else
 					{
@@ -1623,10 +1622,10 @@ void ActParams ( int procptr, int* paramlen)
 		else 			// value param
 		{
 			expr( &ttp);
-			*paramlen ++;
+			*paramlen = *paramlen + 1;
+
 		}
 	}
-
 	expect(rparen);
 	fputs("Done ActParams\n", stdout);
 }
@@ -1746,16 +1745,13 @@ void factor( int* ttp)
 			nextSym();
 			break;
 		case ident:
-			printf(" Ici! Ici! Factor-Ident! Avec %s! \n", currWord);
 			searchid( currWord, &stp);
-			printf(" currWord: %s vs symtab[ stp].name: %s\n", currWord, symtab[ stp].name);
 			if ( stp == 0)
 			{
 				error( 11);
 			}
 			else
 			{
-				printf("Looking at Ident in Factor. STP: %d Name: %s \n", stp, symtab[ stp].name);
 				*ttp = symtab[ stp].idtyp;
 				switch( symtab[ stp].class)
 				{
@@ -1774,22 +1770,20 @@ void factor( int* ttp)
 							gencode( push, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 						nextSym();
 						break;
-					case proccls:				// this would be a proc call ?? YES :)
+					case proccls:				// this would be a proc call
 						gencode( pshc, 0, 0);
-						int paramlen = 0;
 						nextSym();
-
+						int paramlen = 0;
 						// pfcall
 						if( currTok == lparen)// && symtab[ stp].classData.pr.lastparam != 0)
 						{
-							printf(" Reached! Uh oh...\n");
 							nextSym();
 							ActParams( stp, &paramlen);
 						}
 						// else paramlen = 0
 						printf(" =================== JSR Printed ===================\n");
 						gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
-						gencode( isp, 0, -paramlen);
+						gencode( isp, 0, -paramlen);	// +1 for static link on stack
 						break;
 					// case stdfcls:			// TODO: Maybe deal with this
 					// 	nextSym();				//       separately
@@ -1877,6 +1871,7 @@ void StatSeq ( int displ)
 //	AssignStat -> designator := expr
 void AssignStat (int stp)
 {
+	printf("Enter AssignStat\n");
 	int ttp;
 	expr( &ttp);
 
@@ -1884,7 +1879,6 @@ void AssignStat (int stp)
 	switch (symtab[ stp].class)
 	{
 		case varcls:
-			printf("Here! stp: %d addr: %d -----------\n", stp, symtab[ stp].classData.v.varaddr);
 			gencode(pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.v.varaddr);
 			break;
 		case paramcls:
@@ -1893,9 +1887,10 @@ void AssignStat (int stp)
 			else
 				gencode( pop, currlev - symtab[ stp].idlev, symtab[ stp].classData.pa.paramaddr);
 			break;
-		case proccls:
-			gencode( pop, currlev - (symtab[ stp].idlev + 1), symtab[ stp].classData.pr.resultaddr);	// pop return value
-			break;
+		//case proccls:		// irrelevant to Oberon
+		//	printf(" ~~~~~~~~~~~~~~~ Reached! ~~~~~~~~~~~~~~\n");
+		//	gencode( pop, currlev - (symtab[ stp].idlev + 1), symtab[ stp].classData.pr.resultaddr);	// pop return value
+		//	break;
 	}
 
 	fputs("Done AssignStat\n", stdout);
@@ -2115,7 +2110,6 @@ void stat ( displ)
 
 		if ( strcmp( qualBuff, "Out.Int") == 0)
 		{	// writeInt
-			printf("Why am I here?\n");
 			expect( lparen);
 
 			expr( &ttp);
@@ -2171,7 +2165,6 @@ void stat ( displ)
 		{
 			if( currTok == assign)
 			{
-				printf("Here....\n");
 				nextSym();
 				AssignStat( stp);
 			}
@@ -2182,7 +2175,7 @@ void stat ( displ)
 				ActParams( stp, &paramlen);
 				printf(" =========================== JSR Printed in STAT =========================\n");
 				gencode( jsr, currlev - symtab[ stp].idlev, symtab[ stp].classData.pr.paddr);
-				gencode( isp, 0, -paramlen);			
+				gencode( isp, 0, -paramlen);
 			}	
 		}
 
@@ -2215,7 +2208,7 @@ void stat ( displ)
 }
 
 //	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'
-void FormParams ( int procptr, int displ)
+void FormParams ( int procptr, int* displ)
 {
 	fputs("This is FormParams\n", stdout);
 	int isVar = 0;
@@ -2368,8 +2361,8 @@ void FormParams ( int procptr, int displ)
 		while ( paptr > procptr)
 		{
 			pattp = symtab[ paptr].idtyp;
-			displ = displ - typetab[ pattp].size;
-			symtab[ paptr].classData.pa.paramaddr = displ;
+			*displ = *displ - typetab[ pattp].size;
+			symtab[ paptr].classData.pa.paramaddr = *displ;
 			paptr --;
 		}
 
@@ -2395,7 +2388,8 @@ void FormParams ( int procptr, int displ)
 		}
 
 		qualident();
-		//symtab[ procptr].classData.pr.resultaddr = displ - typetab[ ttpR].size;
+		// result addr = displacement - size of result - 1 for the static link sittin on stack
+		symtab[ procptr].classData.pr.resultaddr = *displ - typetab[ ttpR].size - 1;
 		printsymtab();
 	}
 
@@ -2533,7 +2527,7 @@ void ProcDecl ()
 	if(currTok == lparen)
 	{
 		nextSym();
-		FormParams( procptr, displ);
+		FormParams( procptr, &displ);
 		// FormParams handles rparen
 	}
 	else
@@ -2541,13 +2535,19 @@ void ProcDecl ()
 		// no param list
 		symtab[ procptr].classData.pr.lastparam = 0;
 	}
-		
+	//symtab[ procptr].classData.pr.resultaddr = displ - typetab[ symtab[ procptr].idtyp].size;
+	printf(" =========== Result addr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+
 	expect(SEMIC);
 	displ = 1;				// reset displ for use in the code
+	int savstptrbloc = stptr;		// ptr to last param
+	int savlc = lc;					// start assress of code for the proc code
 
+	gencode( jmp, 0, 0);			// back patched later
 	//	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END
 	DeclSeq( &displ);
 	symtab[ procptr].classData.pr.paddr = lc;
+	code[ savlc].ad = lc;
 	gencode( isp, 0, displ - 1);
 	if(currTok == BEGIN_SYM)
 	{
@@ -2555,15 +2555,17 @@ void ProcDecl ()
 		StatSeq( displ);
 	}
 	
-	symtab[ procptr].classData.pr.resultaddr = displ - typetab[ symtab[ procptr].idtyp].size;
-
 	if(currTok == RETURN_SYM)
 	{	
+		// we want whatever comes out of this to be in the return addr
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
+		printf("ResAddr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+		gencode( pop, 0, symtab[ procptr].classData.pr.resultaddr);
 	}
 	gencode( opr, 0, 1);			// return
+
 
 	expect(END_SYM);
 	expect(ident);
