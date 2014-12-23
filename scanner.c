@@ -1335,7 +1335,7 @@ void clrQualBuff ()
 	}
 }
 
-//	qualident -> [ ident . ] ident
+/*	qualident -> [ ident . ] ident	*/
 void qualident()
 {
 	if ( debugMode == 1) fputs("This is a qualident\n", stdout);
@@ -1419,7 +1419,7 @@ void SimplExpr ( int* ttp)
 
 	term( ttp);
 	
-	// addop -> + | - | OR
+	/* addop -> + | - | OR	*/
 	while ( currTok == plus | currTok == minus | currTok == OR_SYM)
 	{
 		if( currTok == OR_SYM)
@@ -1460,7 +1460,7 @@ void expr ( int* ttp)
 
 	SimplExpr( ttp);
 	
-	//	relop -> = | # | < | <= | >= | IN | IS
+	/*	relop -> = | # | < | <= | >= | IN | IS	*/
 	if( currTok == equal | currTok == notEqual | currTok == lt | currTok == lte | currTok == gt | currTok == gte | currTok == IN_SYM | currTok == IS_SYM )
 	{
 		relop = currTok;
@@ -1542,6 +1542,9 @@ void ActParams ( int procptr, int* paramlen)
 		expr( &ttp);
 		*paramlen = 1;
 	}
+	
+	/*	ExprList -> expr {, expr }	*/
+	/*					  ^			*/
 	while ( currTok	== comma)
 	{	
 		nextSym();
