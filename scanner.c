@@ -2281,14 +2281,14 @@ void stat ( displ)
 	if ( debugMode == 1) fputs("Done stat\n", stdout);
 }
 
-//	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'
+/*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
 void FormParams ( int procptr, int* displ)
 {
 	if ( debugMode == 1) fputs("This is FormParams\n", stdout);
 	int isVar = 0;
 	int paramptr, stp, paramtyp;
 	
-	//	FormParamSect -> [ VAR ] ident { , ident } : FormType
+	/*	FormParamSect -> [ VAR ] ident { , ident } : FormType	*/
 	if ( currTok == VAR_SYM | currTok == ident )
 	{
 		if(currTok == VAR_SYM)
@@ -2297,6 +2297,8 @@ void FormParams ( int procptr, int* displ)
 			nextSym();
 		}
 
+		/*	FormParamSect -> [ VAR ] ident { , ident } : FormType	*/
+		/*							 ^								*/
 		if( currTok == ident)
 		{
 			insertid( currWord, paramcls);
@@ -2308,6 +2310,8 @@ void FormParams ( int procptr, int* displ)
 			error( 5);
 		}
 
+		/*	FormParamSect -> [ VAR ] ident { , ident } : FormType	*/
+		/*							 		 ^						*/	
 		while (currTok == comma)
 		{
 			nextSym();
@@ -2322,16 +2326,17 @@ void FormParams ( int procptr, int* displ)
 			}
 		}
 
+		/*	FormParamSect -> [ VAR ] ident { , ident } : FormType	*/
+		/*							 				   ^			*/	
 		expect(colon);
 		
-		//	FormType -> { ARRAY OF } qualident
+		/*	FormType -> { ARRAY OF } qualident	*/
 		while ( currTok == ARRAY_SYM )
 		{
 			nextSym();
 			expect(OF_SYM);
 		}	
-		// qualident();								// ignoring qualified ident
-													// just going to use ident
+		
 		if ( currTok == ident)
 		{
 			searchid( currWord, &stp);
@@ -2344,6 +2349,10 @@ void FormParams ( int procptr, int* displ)
 				paramtyp = symtab[ stp].idtyp;
 			}
 			nextSym();
+			if( currTok == period )
+			{
+				expect(ident);
+			}
 		}
 
 		// set types
@@ -2354,7 +2363,8 @@ void FormParams ( int procptr, int* displ)
 			paramptr++;
 		}
 
-		// { ; FormParamSect }
+		/*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
+		/*										^						*/
 		while ( currTok == SEMIC )
 		{
 			nextSym();
@@ -2462,7 +2472,6 @@ void FormParams ( int procptr, int* displ)
 		}
 
 		qualident();
-		// result addr = displacement - size of result - 1 for the static link sittin on stack
 		symtab[ procptr].classData.pr.resultaddr = *displ - typetab[ ttpR].size - 1;
 		printsymtab();
 	}
@@ -2471,7 +2480,7 @@ void FormParams ( int procptr, int* displ)
 }
  
  
-//	ImportList -> IMPORT import { , import }
+/*	ImportList -> IMPORT import { , import }	*/
 void ImportList ()
 {
 	if ( debugMode == 1) fputs("This is importList\n", stdout);
@@ -2484,7 +2493,8 @@ void ImportList ()
 		expect(ident);
 	}
 	
-	// { , import }
+	/*	ImportList -> IMPORT import { , import }	*/
+	/*								  ^				*/
 	while(currTok == comma)
 	{
 		nextSym();
@@ -2502,14 +2512,18 @@ void ImportList ()
 }
 
 
-//	StrucType -> ArrayType | RecType | PointerType | ProcType
+/**
+	Code isn't properly being generated for Structs
+**/
+/*	StrucType -> ArrayType | RecType | PointerType | ProcType	*/
 void StrucType ()
 {
 	if ( debugMode == 1) fputs("This is StrucType\n", stdout);
 	int ttp;
-	//	RecType -> RECORD [ '(' BaseType ')' ] [ FieldListSeq ] END
-	if(currTok == RECORD_SYM)				/* TODO: This has to change to be good I think? */
-	{										/* I changed it up a bit. I think this should work */
+	
+	/*	RecType -> RECORD [ '(' BaseType ')' ] [ FieldListSeq ] END	*/
+	if(currTok == RECORD_SYM)
+	{
 		nextSym();
 		enterScope();
 		if(currTok == lparen)
@@ -2534,6 +2548,7 @@ void StrucType ()
 		exitScope();
 		expect(END_SYM);
 	}
+	
 	/*
 		ArrayType -> ARRAY length { , length } OF type
 		length -> ConstExpr
@@ -2550,25 +2565,28 @@ void StrucType ()
 		expect(OF_SYM);
 		type( &ttp);
 	}
-	//	PointerType -> POINTER TO type
+	
+	/*	PointerType -> POINTER TO type	*/
 	else if(currTok == POINTER_SYM)
 	{
 		nextSym();
 		expect(TO_SYM);
 		type( &ttp);
 	}
-	//	ProcType -> PROCEDURE [ FormParams ]
+	
+	/*	ProcType -> PROCEDURE [ FormParams ]	*/
 	else if(currTok == PROCEDURE_SYM)
 	{
 		nextSym();
 		if(currTok == lparen)
 			nextSym();
-			FormParams( 0, 0);				// TODO: Dummy value currently
+			FormParams( 0, 0);				// Dummy values currently
 	}
 	if ( debugMode == 1) fputs("Done StrucType\n", stdout);
 }
 
-//	ProcDecl -> ProcHead ; ProcBody ident
+
+/*	ProcDecl -> ProcHead ; ProcBody ident	*/
 void ProcDecl ()
 {
 	if ( debugMode == 1) fputs("Start ProcDecl\n", stdout);
@@ -2577,9 +2595,9 @@ void ProcDecl ()
 
 	/* 
 		ProcHead -> PROCEDURE identdef [ FormParams ]
+					^
 		identdef -> ident [ * ]
 	*/
-	
 	if( currTok == ident)
 	{
 		insertid( currWord, proccls);
@@ -2598,7 +2616,8 @@ void ProcDecl ()
 	enterScope();
 	savstptr = stptr;
 
-	
+	/*	FormParams -> '(' [ FormParamSect { ; FormParamSect } ] ')'	*/
+	/*				   ^											*/
 	if(currTok == lparen)
 	{
 		nextSym();
