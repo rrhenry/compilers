@@ -79,13 +79,16 @@ char currWord [64];				// Word being worked on. Delimited by found whitespaces
 char currNum [64];      		// Current number being read.
 int currInt = 0;				// Needed for output and also codegen.	
 int numCount = 0;
+int prntLn = 0;
+int firstSym = 1;
 
 char qualBuff[64];
 
-int gotNewLine = 1;
 Token setTok;
 
 int debugMode = 0;
+int pleaseList = 1;
+int plsPrintSymTab = 1;
 
 FILE *toScan;
 FILE *codeOut;
@@ -369,6 +372,8 @@ void insertid( char id [16], IdClass cls)
 	symtab[ stptr].previd = scopetab[ currlev];
 
 	scopetab[ currlev] = stptr;
+
+	if ( plsPrintSymTab == 1) printsymtab();
 
 }
 
@@ -662,6 +667,8 @@ void getLine()
 {
 	clrLine();
 
+	lineNo++;
+
 	inptr = 0;
 	char theChar = getc(toScan);
 
@@ -679,7 +686,7 @@ void getLine()
 
 	currChar = theChar;
 
-	gotNewLine = 1;
+    prntLn = 1;
 
 }
 
@@ -689,11 +696,11 @@ void getChar()
 	{
 		getLine();
 	}
-	else
-	{
+	//else
+	//{
 		currChar = currLine[inptr]; 
 		inptr ++;
-	}
+	//}
 
 }
 
@@ -904,9 +911,6 @@ void scanString()
 
 void writeSym()
 {
-
-	printf("\n%d", lineNo);
-	fputs(": ", stdout);
 	fputs(symNames[currTok][0], stdout);
 	
 
@@ -921,13 +925,7 @@ void writeSym()
 
 			break;
 	}
-
-	if (gotNewLine == 1)
-	{
-		printf("\n");
-		gotNewLine = 0;
-		lineNo ++;
-	}
+	printf("\n");
 }
 
 //
@@ -1008,9 +1006,36 @@ void nextSym()
 				break;
 		}
 	}
-	if ( wasComment == 0)
+	if ( prntLn == 1)
 	{
-		writeSym();
+		prntLn = 0;
+		if ( firstSym == 1)
+		{
+			if ( pleaseList == 1)
+				printf("\n%d: %s\n", lineNo, currLine);
+			if ( wasComment == 0)
+			{
+				writeSym();
+			}
+			firstSym = 0;
+		}
+		else
+		{
+			if ( wasComment == 0)
+			{
+				writeSym();
+			}	
+			if ( pleaseList == 1)
+				printf("\n%d: %s\n", lineNo, currLine);		
+		}
+
+	}
+	else
+	{
+		if ( wasComment == 0)
+		{
+			writeSym();
+		}
 	}
 }
 
