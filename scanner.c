@@ -4,7 +4,6 @@
 
 /*			TODO LIST
 		-> make fatal errors fatal (i.e. ctrl-find F_ERROR and add exit statement)
-		-> I MAKE TO EDIT
 		-> Fix line numbers
 */
 
@@ -85,11 +84,8 @@ char qualBuff[64];
 
 int gotNewLine = 1;
 Token setTok;
-//int eofParsed = 0;
-
 
 int debugMode = 0;
-
 
 FILE *toScan;
 FILE *codeOut;
@@ -106,42 +102,6 @@ char *strcopy(char *dst, const char *src)
    }
    *dst = 0;
    return saved;
-}
-	
-// kinda trasn
-int strcmpis( const char *s1, const char *s2)	// str cmp ignore space
-{
-	int len = 0;
-	// move up to last non whitespace character
-	while ( *s1++ != ' ' && *s2++ != ' ')
-	{
-		if ( (*s1 == '\0' && *s2 != '\0') || (*s2 == '\0' && *s1 != '\0'))
-			return 0;	// since they are not of equal length
-		len ++;
-	}
-
-	// move back down through the string
-	while ( len-- > 0)	
-	{
-		if (*s1-- != *s2--)
-			return 0;
-	}
-
-	return 1;
-
-	// while ( *s1 && *s2)				// while the null character is not reached
-	// {
-	// 	if ( *s1++ != *s2++)			// if they are not equal
-	// 	{
-	// 		//if ( !(*s1 == ' ' || *s2 == ' '))
-	// 		//{
-	// 		//	if ( debugMode == 1) printf("Failing on %c vs %c\n", *s1, *s2);
-	// 			return 0;
-	// 		//}
-	// 	}
-
-	// }
-	// return 1;
 }
 
 /* END:   String processing methods */
@@ -168,7 +128,6 @@ int inttyp, realtyp, booltyp, chartyp, texttyp;
 
 typedef enum 				// classes of identifiers
 {
-//	funccls,
 	paramcls,
 	typcls,
 	varcls,
@@ -270,7 +229,6 @@ struct identrec 			// ident struct
 	int idtyp;				// type of the ident
 	IdClass class;			// class of the ident (i.e. ref to class table)
 	union classData classData;
-	// TODO: need to store class information
 };
 
 /*     Ident class substructs */
@@ -373,12 +331,7 @@ void searchid( char id [16], int* stp)
 
 		while ( strcmp(symtab[ *stp].name, id))
 		{
-			//if ( debugMode == 1) printf("stp: %d %s vs %s\n", *stp, symtab[ *stp].name, id);
 			*stp = symtab[ *stp].previd;
-			// if( strcmp(symtab[ *stp].name, id) == 0)
-			// {
-			// 	if ( debugMode == 1) printf("\n\nstp: %d Success with %s vs %s\n", *stp, symtab[ *stp].name, id);
-			// }
 		}
 		lev --;
 	} while (*stp == 0 && lev >= 0);
@@ -448,8 +401,8 @@ void initstdmnemonics()
 
 void initstdidents()
 {
-	int nstdidents = 24;
-	char *stdidents [24][16];
+	int nstdidents = 27;
+	char *stdidents [27][16];
 	stdidents[  0][ 0] = "ABS";
 	stdidents[  1][ 0] = "CHAR";
 	stdidents[  2][ 0] = "FLT";
@@ -474,12 +427,19 @@ void initstdidents()
 	stdidents[ 21][ 0] = "FLOOR";
 	stdidents[ 22][ 0] = "LEN";
 	stdidents[ 23][ 0] = "PACK";
+	stdidents[ 24][ 0] = "Out.Int";
+	stdidents[ 25][ 0] = "Out.Ln";
+	stdidents[ 26][ 0] = "In.Int";
 
 	// enter std types into symbol table
-	enterstdident( stdidents[ 17][0], typcls, inttyp);		// integer
-	enterstdident( stdidents[  4][0], typcls, realtyp);		// real
-	enterstdident( stdidents[  1][0], typcls, chartyp);		// character
-	enterstdident( stdidents[ 15][0], typcls, booltyp);		// boolean
+	enterstdident( stdidents[ 17][ 0], typcls, inttyp);			// integer
+	enterstdident( stdidents[  4][ 0], typcls, realtyp);		// real
+	enterstdident( stdidents[  1][ 0], typcls, chartyp);		// character
+	enterstdident( stdidents[ 15][ 0], typcls, booltyp);		// boolean
+	enterstdident( stdidents[ 24][ 0], typcls, 0);				// Out.Int
+	enterstdident( stdidents[ 25][ 0], typcls, 0);				// Out.Ln
+	enterstdident( stdidents[ 26][ 0], typcls, 0);				// In.Int
+
 
 	// enter std function calls
 	enterstdident( stdidents[  0][0], stdpcls, 0);			// ABS
@@ -946,7 +906,7 @@ void scanString()
 void writeSym()
 {
 
-	printf("%d", lineNo);
+	printf("\n%d", lineNo);
 	fputs(": ", stdout);
 	fputs(symNames[currTok][0], stdout);
 	
@@ -2214,39 +2174,15 @@ void stat ( displ)
 	} 
 	else if ( currTok == ident )	// ASSIGNSTAT or PROCCALL
 	{
-		searchid(currWord, &stp);
-
-		// int absFlag = 0;
-		// int oddFlag = 0;
-
-		// if ( debugMode == 1) printf("    currWord: %s \n ", currWord);
-
-		// if ( strcmp( currWord, "ABS") == 0)
-		// 	absFlag = 1;
-		// else if ( strcmp ( currWord, "ODD") == 0)
-		// 	oddFlag = 1;
+		printf("Error is here\n");
+		searchid(qualBuff, &stp);
 
 		int paramlen = 0;
 		designator();
 
 		if ( debugMode == 1) printf("qualBuff: %s\n", qualBuff);
-		// Out. and In. are in qualBuff
 
-		// if ( absFlag == 1)
-		// {
-		// 	if ( debugMode == 1) printf("It's ABS! \n");
-		// 	expect( lparen);
-		// 	expr( &ttp);
-		// 	expect( rparen);
-		// }
-		// else if ( oddFlag == 1)
-		// {
-		// 	if ( debugMode == 1) printf("It's ODD! \n");
-		// 	expect( lparen);
-		// 	expr( &ttp);
-		// 	expect( rparen);
-		// }
-		/*else*/ if ( strcmp( qualBuff, "Out.Int") == 0)
+		if ( strcmp( qualBuff, "Out.Int") == 0)
 		{	// writeInt
 			expect( lparen);
 
