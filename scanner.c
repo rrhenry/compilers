@@ -2690,6 +2690,7 @@ void ProcDecl ()
 	enterScope();
 	savstptr = stptr;
 
+	
 	if(currTok == lparen)
 	{
 		nextSym();
@@ -2701,38 +2702,46 @@ void ProcDecl ()
 		// no param list
 		symtab[ procptr].classData.pr.lastparam = 0;
 	}
-	//symtab[ procptr].classData.pr.resultaddr = displ - typetab[ symtab[ procptr].idtyp].size;
-	if ( debugMode == 1) printf(" =========== Result addr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+	printf(" =========== Result addr: %d \n", symtab[ procptr].classData.pr.resultaddr);
 
 	expect(SEMIC);
-	displ = 1;				// reset displ for use in the code
+	displ = 1;						// reset displ for use in the code
 	int savstptrbloc = stptr;		// ptr to last param
 	int savlc = lc;					// start assress of code for the proc code
 
 	gencode( jmp, 0, 0);			// back patched later
-	//	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END
+	
+	
+	/*	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END	*/
 	DeclSeq( &displ);
 	symtab[ procptr].classData.pr.paddr = lc;
 	code[ savlc].ad = lc;
 	gencode( isp, 0, displ - 1);
+	
+	/*	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END	*/
+	/*						  ^										*/
 	if(currTok == BEGIN_SYM)
 	{
 		nextSym();
 		StatSeq( displ);
 	}
 	
+	/*	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END	*/
+	/*						  					^					*/
 	if(currTok == RETURN_SYM)
 	{	
 		// we want whatever comes out of this to be in the return addr
 		nextSym();
 		int ttpR;
 		expr( &ttpR);
-		if ( debugMode == 1) printf("ResAddr: %d \n", symtab[ procptr].classData.pr.resultaddr);
+		printf("ResAddr: %d \n", symtab[ procptr].classData.pr.resultaddr);
 		gencode( pop, 0, symtab[ procptr].classData.pr.resultaddr);
 	}
 	gencode( opr, 0, 1);			// return
 
 
+	/*	ProcBody -> DeclSeq [ BEGIN StatSeq ] [ RETURN expr ] END	*/
+	/*						  								  ^		*/
 	expect(END_SYM);
 	expect(ident);
 	exitScope();
@@ -2764,6 +2773,8 @@ void identList()
 	}
 }
 
+
+
 /*
 	DeclSeq -> [ CONST { ConstDecl ; } ]
 			[ TYPE { TypeDecl ; } ]
@@ -2791,6 +2802,9 @@ void DeclSeq ( int* displ)
 				nextSym();
 			expect(equal);
 			expr( &ttpC);
+			
+			/*	DeclSeq -> [ CONST { ConstDecl ; } ]	*/
+			/*								   ^        */
 			expect(SEMIC);
 		}
 	}
@@ -2807,13 +2821,16 @@ void DeclSeq ( int* displ)
 			nextSym();
 			if(currTok == mul)
 				nextSym();
+			
+			/*	TypeDecl -> identdef = StrucType	*/
+			/*						 ^				*/
 			expect(equal);
 			StrucType();
 			expect(SEMIC);
 		}
 	}
 	
-	//	VarDecl -> identList : type
+	/*	VarDecl -> identList : type */
 	else if (currTok == VAR_SYM)	/* VarDecl */
 	{
 		int stpv1, stpv2, ttpV;
@@ -2822,12 +2839,10 @@ void DeclSeq ( int* displ)
 		
 		while ( currTok == ident )
 		{
-			/* identList */
-			/* 
-			We have an identList method. Is there a specific reason it's not being used?
-			Did I forget there was one? Did YOU creat it? Should we even call it here?
-			*/
 
+			/*	identList -> identDef {, identDef}
+				identDef -> ident [*]
+			 */
 			if ( currTok == ident)
 			{
 				insertid( currWord, varcls);
@@ -2837,7 +2852,7 @@ void DeclSeq ( int* displ)
 			}
 			else
 			{
-				if ( debugMode == 1) printf("ERROR 4: ?????\n");
+				printf("ERROR 4: ?????\n");
 			}
 
 			if ( currTok == mul)
@@ -2856,7 +2871,7 @@ void DeclSeq ( int* displ)
 				}
 				else
 				{
-					if ( debugMode == 1) printf("ERROR 4: ?????\n");
+					printf("ERROR 4: ?????\n");
 				}
 				if ( currTok == mul)
 				{
@@ -2865,14 +2880,19 @@ void DeclSeq ( int* displ)
 			}
 			stpv2 = stptr;						// save ptr to last entry
 
+
+
+			/*	VarDecl -> identList : type */
+			/*						 ^      */
 			expect( colon);
+			
 			type( &ttpV);						// now, ttpV should have the type
 
 			do
 			{
 				symtab[ stpv1].idtyp = ttpV;
 				symtab[ stpv1].classData.v.varaddr = *displ;
-				if ( debugMode == 1) printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
+				printf("addr: %d\n", symtab[ stpv1].classData.v.varaddr);
 				*displ = *displ + typetab[ ttpV].size;
 				stpv1++;
 			} while ( stpv1 <= stpv2 );
@@ -2882,6 +2902,7 @@ void DeclSeq ( int* displ)
 			expect(SEMIC);
 	}
 	}
+	
 	/* ProcDecl */
 	while (currTok == PROCEDURE_SYM)
 	{
@@ -2896,18 +2917,13 @@ void DeclSeq ( int* displ)
 
 /* 
 	module -> MODULE ident ; 
-	[ ImportList ]
-	DeclSeq
-	[ BEGIN StatSeq ]
-	END ident .
+			[ ImportList ]
+			DeclSeq
+			[ BEGIN StatSeq ]
+			END ident .
 */
 void Module ()
 {
-	/*
-		JUST A THOUGHT: Herman likes augmented gramars, and parsers which have an 
-		S -> M, right? Such that nextSym() is called in the same proc as Module is called.
-		Should we eliminate nextSym() here and call it where we call Module()? Like in Scan?
-	*/ 
 	if ( debugMode == 1) fputs("Enter Module \n", stdout);
 	nextSym();
 	expect(MODULE_SYM);
@@ -2915,7 +2931,7 @@ void Module ()
 	expect(SEMIC);
 
 	enterScope();
-	// Entering code segment of module.
+	/* Entering code segment of module */
 	int displ = 1;							// initialize displacement
 	int savstptr = stptr;					// save entry point
 	int savlc = lc;
@@ -2926,7 +2942,6 @@ void Module ()
 		nextSym();
 		ImportList();
 	}
-		
 
 	DeclSeq( &displ);
 
@@ -2943,78 +2958,21 @@ void Module ()
 	expect(ident);
 	if( currTok != period )
 	{
-		if ( debugMode == 1) fputs("\nln: ", stdout);
-		if ( debugMode == 1) printf("%d", lineNo);
-		if ( debugMode == 1) fputs("  ERROR: Unexpexted token ", stdout);
-		if ( debugMode == 1) fputs(symNames[currTok][0], stdout);
-		if ( debugMode == 1) fputs(". ", stdout);
-		if ( debugMode == 1) fputs(symNames[period][0], stdout);
-		if ( debugMode == 1) fputs(" expected\n\n", stdout);
+		fputs("\nln: ", stdout);
+		printf("%d", lineNo);
+		fputs("  ERROR: Unexpexted token ", stdout);
+		fputs(symNames[currTok][0], stdout);
+		fputs(". ", stdout);
+		fputs(symNames[period][0], stdout);
+		fputs(" expected\n\n", stdout);
 		
-		if ( debugMode == 1) fputs(currLine, stdout);
+		fputs(currLine, stdout);
 		
 		int i;
 		for(i = 0; i < inptr-2; i++)
 			fputc('-', stdout);
-		if ( debugMode == 1) fputs("^\n\n", stdout);
+		fputs("^\n\n", stdout);
 	}	
 
 	if ( debugMode == 1) fputs("Reached the end of Module", stdout);
 }
-
-
-
-/* LEGACY CODE */
-
-	/*		OLD FACTOR
-	if ( currTok == string | currTok == number | currTok == NIL_SYM | currTok == TRUE_SYM | currTok == FALSE_SYM)
-	{
-		// Here we need to distringuish between integer or real, since
-		// num -> integer | real
-
-		nextSym();
-	}
-	else if ( currTok == ident)
-	{
-		//if ( debugMode == 1) fputs("Why not here??\n", stdout);
-		designator();
-		if( currTok == lparen)
-		{
-			nextSym();
-			ActParams();
-		}
-	
-	}
-	else if ( currTok == lparen)
-	{
-		nextSym();
-		expr( ttp);
-	//	if ( debugMode == 1) fputs("Here... \n", stdout);
-		expect(rparen);
-	}
-	else if ( currTok == tilde)
-	{
-		nextSym();
-		factor( ttp);
-	}
-	else if ( currTok == lcurly)
-	{
-		nextSym();
-		set();
-	}
-
-	ACT PARAMS
-
-	expr( &ttp);
-	*paramlen = 1;
-//	if ( debugMode == 1) fputs("HERE?\n", stdout);
-	while ( currTok == comma )
-	{
-		nextSym();
-		expr( &ttp);
-		*paramlen++;
-	}
-	
-
-
-	*/
