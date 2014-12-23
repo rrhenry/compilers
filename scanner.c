@@ -2174,13 +2174,10 @@ void stat ( displ)
 	} 
 	else if ( currTok == ident )	// ASSIGNSTAT or PROCCALL
 	{
-		printf("Error is here\n");
 		searchid(qualBuff, &stp);
 
 		int paramlen = 0;
 		designator();
-
-		if ( debugMode == 1) printf("qualBuff: %s\n", qualBuff);
 
 		if ( strcmp( qualBuff, "Out.Int") == 0)
 		{	// writeInt
