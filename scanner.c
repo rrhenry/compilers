@@ -1241,7 +1241,7 @@ void initSymNames()
 	 symNames[   BOOLEAN_SYM][ 0] = "BOOLEAN_SYM";
 	 symNames[      CHAR_SYM][ 0] = "CHAR_SYM";
 	 symNames[     FALSE_SYM][ 0] = "FALSE_SYM";
-	 symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
+	 //symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
 	 symNames[       NEW_SYM][ 0] = "NEW_SYM";
 	 symNames[      REAL_SYM][ 0] = "REAL_SYM";
 	 symNames[      TRUE_SYM][ 0] = "TRUE_SYM";
@@ -2133,7 +2133,15 @@ void ForStat(int displ)
 	if (currTok == BY_SYM)		// TODO: ignoring by for now
 	{
 		nextSym();
+		printf(" --------------- before call to expr in by... \n");
+		if ( currTok == minus)
+		{
+			nextSym();								// skip so it's properly ignored atm
+			printf(" Gonna be DOWNTO, yo!\n");
+		}
 		expr( &ttp1);
+		printf(" --------------- in By, Lookin at currInt %d \n", currInt);
+		gencode( pop, 0, 0);
 	}
 	expect(DO_SYM);
 	savlc1 = lc;
