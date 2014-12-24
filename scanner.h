@@ -23,5 +23,6 @@ void WhileStat();
 void factor( int* ttp);
 void term( int* ttp);
 void identList();
+void error( int e);
 
 #endif

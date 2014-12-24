@@ -53,6 +53,7 @@ typedef enum {
 
 const char *resWords [41][64];
 const char *symNames [127][64];
+const char *errorMsgs[70][64];
 Token resWordTokens [127];
 Token specialSymbols [127];
 const int RESWORD_SIZE = 40;
@@ -539,11 +540,6 @@ void initcompile()
 
 void writeSym();
 
-void error (int e)
-{
-	printf("ERROR %d\n", e);
-}
-
 int isDigit(char aChar)
 {
 	if ( aChar >= '0' && aChar <= '9')
@@ -572,7 +568,7 @@ int isHexDigit(char aChar)
 
 int isSep(char aChar)
 {
-	if (aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r')// || aChar == '\0')// || currChar == ')' || currChar == '(')			// if its a space
+	if (aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == '\r')
 		return 1;
 
 	return 0;
@@ -1098,7 +1094,6 @@ void initScanner()
 	resWords [ 37][ 0] = "VAR";
 	resWords [ 38][ 0] = "WHILE";
 	resWords [ 39][ 0] = "WITH";
-	// INTEGER
 
 	resWordTokens [  0] = BOOLEAN_SYM;
 	resWordTokens [  1] = CHAR_SYM;
@@ -1140,7 +1135,6 @@ void initScanner()
 	resWordTokens [ 37] = VAR_SYM;
 	resWordTokens [ 38] = WHILE_SYM;
 	resWordTokens [ 39] = WITH_SYM;
-	// INTEGER
 
 }
 
@@ -1220,7 +1214,6 @@ void initSymNames()
 	 symNames[   BOOLEAN_SYM][ 0] = "BOOLEAN_SYM";
 	 symNames[      CHAR_SYM][ 0] = "CHAR_SYM";
 	 symNames[     FALSE_SYM][ 0] = "FALSE_SYM";
-	 //symNames[    INTEGER_SYM][0] = "INTEGER_SYM";
 	 symNames[       NEW_SYM][ 0] = "NEW_SYM";
 	 symNames[      REAL_SYM][ 0] = "REAL_SYM";
 	 symNames[      TRUE_SYM][ 0] = "TRUE_SYM";
@@ -1255,6 +1248,22 @@ void initSymNames()
 	 symNames[        eofSym][ 0] = "EOF";
 }
 
+void initErrorMsgs()
+{
+  errorMsgs[ 36][0] = "Non-label in label list. \n";
+  errorMsgs[ 35][0] = "35. \n";
+  errorMsgs[ 34][0] = "34. \n";
+  errorMsgs[ 11][0] = "Undeclared identifier. \n";
+  errorMsgs[  5][0] = "Semi colon or comma expected. \n";
+  errorMsgs[ 41][0] = "41. \n";
+  errorMsgs[  4][0] = "Identifier expected. \n"; 
+}
+
+void error( int e)
+{
+  printf("%s", errorMsgs[ e][0]);
+}
+
 //
 //	Scans the file and outputs the tokens to the screen.
 //
@@ -1262,6 +1271,7 @@ void scan()
 {
 	// initialize scanner, parser, compiler
 	initScanner();
+  initErrorMsgs();
 	initSymNames();
 	initSpecialSyms();
 	initcompile();
@@ -1281,9 +1291,9 @@ void scan()
 int main( int argc, char *argv[] )
 {	
 	int numArgs = 3;
-	if ( argc == numArgs)		// we need 1 file to open, specified on command line, so 2 command line args
+	if ( argc == numArgs)		            // we need 2 files to open, specified on command line, so 2 command line args
 	{
-		toScan = fopen(argv[1], "r");		// assume second value is toParse file name
+		toScan = fopen(argv[1], "r");		  // assume second value is toParse file name
 		codeGenOut = fopen(argv[2], "w");
 
 		if (toScan != NULL)
@@ -1395,10 +1405,10 @@ void type ( int* ttp)
 
 	if ( currTok == ident )
 	{
-		searchid( currWord, &stp);			// check to see if ident is a type
-		if (symtab[ stp].class != typcls)	// ^
+		searchid( currWord, &stp);			     // check to see if ident is a type
+		if (symtab[ stp].class != typcls)	   // ^
 		{
-			error( 41);						// error message 41
+			error( 41);						             // error message 41
 		}
 		*ttp = symtab[ stp].idtyp;
 		qualident();
