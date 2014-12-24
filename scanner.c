@@ -2,19 +2,14 @@
 //  Alexi Turcotte
 //  Roxanne Henry
 
-/*			TODO LIST
-		-> make fatal errors fatal (i.e. ctrl-find F_ERROR and add exit statement)
-		-> Fix line numbers
-*/
-
 #include <stdio.h>
 #include "scanner.h"
 
 typedef enum {  
-				lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, 
-				notEqual, comma, period, ident, resWord, number, string, eofSym, invalidSym, opSym, SET_SYM, tilde, lcurly, rcurly,
-			 	ARRAY_SYM,
-			    BEGIN_SYM,
+				  lparen, rparen, plus, minus, mul, slash, rbrac, lbrac, equal, colon, lt, lte, gt, gte, SEMIC, null, assign, hat, 
+				  notEqual, comma, period, ident, resWord, number, string, eofSym, invalidSym, opSym, SET_SYM, tilde, lcurly, rcurly,
+          ARRAY_SYM,
+          BEGIN_SYM,
 			    BY_SYM,
 			    CASE_SYM,
 			    CONST_SYM,
@@ -35,7 +30,7 @@ typedef enum {
 			    NIL_SYM,
 			    OF_SYM,
 			    OR_SYM,
-				AND_SYM,
+				  AND_SYM,
 			    POINTER_SYM,
 			    PROCEDURE_SYM,
 			    RECORD_SYM,
@@ -67,17 +62,17 @@ const int BUFF_SIZE = 256;		// if you change this pls change currLine's size
 const int WORD_SIZE = 64;
 const int NUM_SIZE = 64;
 char currChar;
-char currLine [256];			// 256 character limit is arbitrary but sensible.
-								// should be pointer...?
+char currLine [256];			    // 256 character limit is arbitrary but sensible.
+
 int lineLen = 0;
 int inptr = 0;
-int count = 0;					// Global counter for current line position
+int count = 0;					      // Global counter for current line position
 int lineNo = 0;
-char currWord [64];				// Word being worked on. Delimited by found whitespaces 
-								// and to be compared to a table of reserved words
+char currWord [64];				    // Word being worked on. Delimited by found whitespaces 
+								              // and to be compared to a table of reserved words
 
-char currNum [64];      		// Current number being read.
-int currInt = 0;				// Needed for output and also codegen.	
+char currNum [64];      		  // Current number being read.
+int currInt = 0;				      // Needed for output and also codegen.	
 int numCount = 0;
 int prntLn = 0;
 int firstSym = 1;
@@ -113,11 +108,11 @@ char *strcopy(char *dst, const char *src)
 
 int currlev = 0;
 int lc = 0;
-int stptr = 0;				// ptr to last entry in symbol table
-int ttptr = 0;				// ptr to last entry in type table
+int stptr = 0;				      // ptr to last entry in symbol table
+int ttptr = 0;				      // ptr to last entry in type table
 const int maxlev = 10;
-const int stsize = 256;		// length of symbol table
-const int ttsize = 128;  	// length of type table
+const int stsize = 256;	  	// length of symbol table
+const int ttsize = 128;  	  // length of type table
 const int codemax = 1023;   // length of code array
 const int idbuffsize = 16;	// length of identifiers
 
@@ -167,17 +162,17 @@ typedef enum				// all possible opcodes
 	,nop
 } Opcode;
 
-struct vminstr				// struct for VM instructions
+struct vminstr	   // struct for VM instructions
 {
-	Opcode op;				// opcode
-	int ld;					// static level difference
-	int ad;					// offset from beginning of stack frame
+	Opcode op;			 // opcode
+	int ld;					 // static level difference
+	int ad;					 // offset from beginning of stack frame
 };
 
-struct typerec				// type struct
+struct typerec		 // type struct
 {
-	int size;				// memory footprint
-	TypeForm form;			// type type
+	int size;		  	 // memory footprint
+	TypeForm form;	 // type type
 };
 
 struct paramstruct
@@ -227,9 +222,9 @@ union classData
 struct identrec 			// ident struct
 {
 	char name [16];			// name of the ident
-	int previd;				// link to previous identrec
-	int idlev;				// static level of the ident decl
-	int idtyp;				// type of the ident
+	int previd;				  // link to previous identrec
+	int idlev;				  // static level of the ident decl
+	int idtyp;			  	// type of the ident
 	IdClass class;			// class of the ident (i.e. ref to class table)
 	union classData classData;
 };
@@ -248,9 +243,9 @@ struct identrec 			// ident struct
 /* END Ident class substructs */
 
 struct identrec symtab [256];  		// symbol table
-struct typerec typetab [128];		// type table
+struct typerec typetab [128];		  // type table
 struct vminstr code    [1023];		// generated code
-int scopetab [10];					// scope table
+int scopetab [10];				      	// scope table
 
 /* End Code Gen Data Fields */
 
@@ -324,10 +319,10 @@ void enterstdident ( char id [], IdClass cls, int ttp)
 
 void searchid( char id [16], int* stp)
 {
-	int lev = 0;					// local var for level
-	strcopy(symtab[ 0].name, id);	// sentinel for search
+	int lev = 0;					          // local var for level
+	strcopy(symtab[ 0].name, id);	  // sentinel for search
 
-	lev = currlev;					// start searching at the current scope level
+	lev = currlev;					        // start searching at the current scope level
 	do
 	{
 		*stp = scopetab[ lev];
@@ -441,16 +436,16 @@ void initstdidents()
 	enterstdident( stdidents[  4][ 0], typcls, realtyp);		// real
 	enterstdident( stdidents[  1][ 0], typcls, chartyp);		// character
 	enterstdident( stdidents[ 15][ 0], typcls, booltyp);		// boolean
-	enterstdident( stdidents[ 24][ 0], typcls, 0);				// Out.Int
-	enterstdident( stdidents[ 25][ 0], typcls, 0);				// Out.Ln
-	enterstdident( stdidents[ 26][ 0], typcls, 0);				// In.Int
+	enterstdident( stdidents[ 24][ 0], typcls, 0);			  	// Out.Int
+	enterstdident( stdidents[ 25][ 0], typcls, 0);	  			// Out.Ln
+	enterstdident( stdidents[ 26][ 0], typcls, 0);	  			// In.Int
 
 
 	// enter std function calls
-	enterstdident( stdidents[  0][0], stdpcls, 0);			// ABS
-	symtab[ stptr].classData.s.procnum = 0;					// ABS proc num = 0
-	enterstdident( stdidents[ 13][0], stdpcls, 0);			// ODD
-	symtab[ stptr].classData.s.procnum = 1;					// ODD proc num = 1
+	enterstdident( stdidents[  0][0], stdpcls, 0);	 		 // ABS
+	symtab[ stptr].classData.s.procnum = 0;					     // ABS proc num = 0
+	enterstdident( stdidents[ 13][0], stdpcls, 0); 			 // ODD
+	symtab[ stptr].classData.s.procnum = 1;				    	 // ODD proc num = 1
 
 
 }
@@ -487,13 +482,34 @@ void enterstdtypes()
 void printsymtab()
 {
 	printf("\n");
-	printf("      name             level   type  previd\n");		// TOADD addr  
+	printf("      name             level   type  previd    addr \n"); 
 
 	int i;
 	for ( i = 1; i <= stptr; i++)
 	{
-		printf("%4d:%16s %6d %6d %7d\n", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
-	}
+		printf("%4d:%16s %6d %6d %7d", i, symtab[ i].name, symtab[ i].idlev, symtab[ i].idtyp, symtab[ i].previd);
+    switch ( symtab[ i].class)
+    {
+      case varcls:
+        printf(" %7d", symtab[ i].classData.v.varaddr);
+        break;
+
+      case paramcls:
+        printf(" %7d", symtab[ i].classData.pa.paramaddr);
+        if ( symtab[ i].classData.pa.varparam == 1)
+          printf(" varparam");
+        else
+          printf(" valparam");
+        break;
+
+      case proccls:
+          printf(" %7d", symtab[ i].classData.pr.paddr);
+          if ( symtab[ i].classData.pr.resultaddr != 0)
+            printf(" resultAddr: %d", symtab[ i].classData.pr.resultaddr);
+        break;
+    }
+    printf("\n");
+  }
 }
 
 void printtyptab()
@@ -1264,21 +1280,15 @@ void scan()
 
 int main( int argc, char *argv[] )
 {	
-	int numArgs = 4;
+	int numArgs = 3;
 	if ( argc == numArgs)		// we need 1 file to open, specified on command line, so 2 command line args
 	{
 		toScan = fopen(argv[1], "r");		// assume second value is toParse file name
-		codeOut = fopen(argv[2], "w");
-		codeGenOut = fopen(argv[3], "w");
+		codeGenOut = fopen(argv[2], "w");
 
 		if (toScan != NULL)
 		{
 			scan();
-		}
-
-		if (codeOut != NULL)
-		{
-			listcode( 0);
 		}
 
 		if (codeGenOut != NULL)
